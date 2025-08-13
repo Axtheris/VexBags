@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +52,8 @@ public class BackpackGui {
             lore.add(com.axther.vexBags.util.ItemUtil.mm().deserialize("<gray>" + com.axther.vexBags.util.ItemUtil.toSmallCaps("total:") + "</gray> <white>" + st.getAmount() + "</white>").decoration(TextDecoration.ITALIC, false));
             lore.add(com.axther.vexBags.util.ItemUtil.CLICK_HINT);
             meta.lore(lore);
+            // Tag the original stack key so clicks can withdraw using the correct identity
+            meta.getPersistentDataContainer().set(com.axther.vexBags.VexBags.getInstance().getKeyEntryIndex(), PersistentDataType.STRING, st.getKey());
             display.setItemMeta(meta);
             display.setAmount(Math.min(st.getAmount(), display.getMaxStackSize()));
             inventory.setItem(slot++, display);

@@ -124,7 +124,15 @@ public class BackpackListeners implements Listener {
 		if (clickedTop) {
 			ItemStack clicked = event.getCurrentItem();
 			if (clicked == null || clicked.getType() == Material.AIR) return;
-			String key = com.axther.vexBags.util.ItemUtil.stackKey(clicked);
+			String key = null;
+			ItemMeta cmeta = clicked.getItemMeta();
+			if (cmeta != null) {
+				var pdc = cmeta.getPersistentDataContainer();
+				key = pdc.get(com.axther.vexBags.VexBags.getInstance().getKeyEntryIndex(), org.bukkit.persistence.PersistentDataType.STRING);
+			}
+			if (key == null) {
+				key = com.axther.vexBags.util.ItemUtil.stackKey(clicked);
+			}
 			int available = data.getCountByKey(key);
 			if (available <= 0) return;
 

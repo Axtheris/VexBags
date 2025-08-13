@@ -1,0 +1,123 @@
+# ---- Java / Maven ----
+target/
+out/
+bin/
+*.class
+
+# Maven auxiliary files
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.flattened-pom.xml
+.mvn/timing.properties
+
+# Test results & coverage (usually inside target/, but safe to ignore just in case)
+surefire-reports/
+failsafe-reports/
+jacoco.exec
+
+
+# ---- IDE / Editor ----
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# NetBeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# VS Code (keep specific files if you want to share them)
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+
+# General editor temp files
+*.swp
+*.swo
+*.swn
+*~
+.history/
+.idea_modules/
+
+
+# ---- OS-specific cruft ----
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.Trash-*/
+
+
+# ---- Logs / Dumps ----
+*.log
+log/
+logs/
+hs_err_pid*
+replay_pid*
+
+
+# ---- Local env / secrets ----
+.env
+.env.*
+*.local
+
+
+# ---- Minecraft local dev server (optional, but recommended) ----
+# If you keep a test server in this repo root, ignore its runtime files
+server/
+run/
+plugins/
+world/
+world_nether/
+world_the_end/
+cache/
+crash-reports/
+eula.txt
+server.properties
+bukkit.yml
+spigot.yml
+paper.yml
+ops.json
+whitelist.json
+banned-ips.json
+banned-players.json
+usercache.json
+usernamecache.json
+
+
+# ---- Misc temporary files ----
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+

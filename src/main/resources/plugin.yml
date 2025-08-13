@@ -5,3 +5,22 @@ api-version: '1.21'
 load: STARTUP
 authors: [ 7vexes, Axther ]
 description: Just another backpack plugin.
+
+commands:
+  vexbags:
+    description: Give yourself a backpack for testing
+    usage: /<command> [tier]
+    permission: vexbags.command
+    aliases: [vbag, vbags, vb]
+  vexbagsadmin:
+    description: Admin tools for managing backpacks
+    usage: /<command> <list|open|delete|restore> [...]
+    permission: vexbags.admin
+
+permissions:
+  vexbags.command:
+    description: Allows using /vexbags
+    default: op
+  vexbags.admin:
+    description: Admin access to list, open, delete, restore backpacks
+    default: op

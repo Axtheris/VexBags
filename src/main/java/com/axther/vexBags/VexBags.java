@@ -112,6 +112,18 @@ public final class VexBags extends JavaPlugin {
 
 	public String getServerSecret() { return serverSecret; }
 
+	public void reloadPluginConfigAndSecret() {
+		reloadConfig();
+		String secret = getConfig().getString("secret");
+		if (secret == null || secret.isEmpty()) {
+			secret = java.util.UUID.randomUUID().toString().replace("-", "");
+			getConfig().set("secret", secret);
+			saveConfig();
+		}
+		this.serverSecret = secret;
+		com.axther.vexBags.tier.TierRegistry.load(this);
+	}
+
 	private void registerBackpackRecipes() {
 		// Clear old recipes this plugin may have registered previously (helpful during /reload in dev)
 		Iterator<Recipe> iterator = Bukkit.recipeIterator();

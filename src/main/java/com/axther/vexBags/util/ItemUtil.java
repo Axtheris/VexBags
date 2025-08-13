@@ -409,5 +409,9 @@ public final class ItemUtil {
         String expected = Integer.toHexString(payload.hashCode());
         return expected.equals(sig);
     }
+
+    public static void sendPrefixed(org.bukkit.command.CommandSender sender, String miniMessage) {
+        sender.sendMessage(MM.deserialize("<gray>[</gray><color:#6b3fa0>" + toSmallCaps("vexbags") + "</color><gray>]</gray> " + miniMessage).decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+    }
 }
 

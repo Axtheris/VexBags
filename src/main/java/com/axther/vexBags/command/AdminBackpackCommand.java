@@ -95,6 +95,8 @@ public class AdminBackpackCommand implements CommandExecutor, org.bukkit.command
                     // Give a new item pointing to the same backpack id
                     var item = com.axther.vexBags.util.ItemUtil.createNewBackpackItem(data.getTier());
                     com.axther.vexBags.util.ItemUtil.setBackpackId(item, id);
+                    // Re-sign with current secret to prevent stale signatures after secret change
+                    com.axther.vexBags.util.ItemUtil.signBackpack(item);
                     BackpackStorage.get().setOwner(id, targetPlayer.getUniqueId());
                     targetPlayer.getInventory().addItem(item);
                     com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<gray>Restored backpack to</gray> <white>" + targetPlayer.getName() + "</white>");

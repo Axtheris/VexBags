@@ -24,12 +24,15 @@ Repository: [Axtheris/VexBags](https://github.com/Axtheris/VexBags)
 - **Tiered backpacks**: Leather → Copper → Iron → Gold → Diamond → Netherite
 - **Beautiful GUI**: compact grid that summarizes your stored items and totals
 - **Dual progress bars**: unique item types and overall capacity (items out of max)
-- **Smart controls**: fast deposit/withdraw mappings with consistent 1/8/16/32/64 steps
+- **Smart controls**: fast withdraw mappings (1/8/16/32/64/all), plus quick deposit from player inventory (shift-click stack, F to deposit all of same item, double‑click to store all of same item)
 - **Craftable and upgradeable**: simple base recipe; upgrades require the previous tier
 - **Recipe discovery**: auto-unlocked for players on join
 - **Dupe-safe**: server-signed backpack items with verification before use
 - **Precise stacking**: items tracked by canonical stack signature (includes meta), not just material
-- **Persistent storage**: fast YAML-backed storage with debounced async saves
+- **Live item preview**: shulker preview reflects top stored items and counts
+- **Persistent storage**: fast JSON-backed storage with debounced async saves
+- **Highly configurable**: per-tier slots and per-slot caps; display name, color, material, and custom model data
+- **Customizable chat prefix**: gradient MiniMessage prefix, fully configurable
 
 ## Requirements
 
@@ -73,6 +76,10 @@ Prefer not to build from source?
 
 - `vexbags.command`: use `/vexbags` (default: op)
 - `vexbags.admin`: use admin subcommands (default: op)
+- `vexbags.admin.list`: list backpacks for a player (default: op)
+- `vexbags.admin.open`: open any backpack by UUID (default: op)
+- `vexbags.admin.delete`: delete any backpack by UUID (default: op)
+- `vexbags.admin.restore`: restore a backpack to a player (default: op)
 
 ## Controls (GUI)
 
@@ -83,14 +90,11 @@ Prefer not to build from source?
 - Middle-click: withdraw 64
 - F (swap-offhand) on a slot: withdraw all from that entry
 
-Depositing from player inventory:
+Depositing from player inventory side:
 
-- Left-click item: deposit 1
-- Right-click item: deposit up to 8 (or current stack amount)
-- Shift + Left-click: deposit up to 16
-- Shift + Right-click: deposit up to 32
-- Middle-click: deposit up to 64
-- F (swap-offhand) on an item: deposit the entire selected stack
+- Shift-click: quick-move the whole stack into the backpack (respects per-slot cap)
+- F (swap-offhand): deposit all of the same item type from your inventory (respects per-slot cap and type slots)
+- Pick up + double-click: store all of the same item type from your inventory
 
 ## Crafting and Upgrades
 
@@ -104,6 +108,7 @@ Backpacks are crafted and upgraded with shaped recipes. All recipes are namespac
   - `I = tier material` (e.g., `COPPER_INGOT`, `IRON_INGOT`, ...)
   - `B = previous-tier backpack`
   - The result keeps the same backpack ID, upgrading in place
+  - Backpack items are signed; IDs are assigned/preserved on craft and verified on use
 
 ## Tiers
 
@@ -119,22 +124,60 @@ Backpacks are crafted and upgraded with shaped recipes. All recipes are namespac
 ## Data and persistence
 
 - Data folder: `plugins/VexBags/`
-- Primary store: `backpacks.yml`
-- Owner index: `index.yml`
+- Primary store: `backpacks.json`
+- Owner index: `index.json`
 - Items persist as a map of `stackKey -> count` where `stackKey` is a canonical, hashed signature of the item stack (includes meta/NBT). Legacy material-only entries are auto-read when possible.
 - Saves are debounced and run asynchronously to minimize disk churn
+- A `tiers.json` snapshot is written for reference; use `config.yml` to customize tier behavior
 
 ## Security and anti-dupe
 
 - Each backpack item is signed with a server-only `secret` plus internal fields
 - Signatures are verified on use; failed verification prevents opening
 - The `secret` is generated on first run and stored in `config.yml`
+- Backpack items cannot be placed as blocks
+
+## Configuration
+
+All options live in `plugins/VexBags/config.yml`.
+
+- **Chat prefix**: `chat.prefix.*`
+  - `enabled`, `text`, `gradient_start`, `gradient_end`, `brackets`, `separator`
+- **Tiers**: `tiers.<tier>.*`
+  - `slots`: number of unique item types the GUI can display/store
+  - `per_slot_max`: max total count per item type in that backpack
+  - `display_name`: display name used in item name and GUI title
+  - `hex_color`: primary color for namebars and progress visuals
+  - `material`: the actual item used for the backpack (default `SHULKER_BOX`)
+  - `custom_model_data`: integer CMD for resource packs (optional)
+
+Example:
+
+```yml
+chat:
+  prefix:
+    enabled: true
+    text: "vexbags"
+    gradient_start: "#6b3fa0"
+    gradient_end: "#3de2ff"
+    brackets: true
+    separator: " » "
+
+tiers:
+  diamond:
+    slots: 45
+    per_slot_max: 64
+    display_name: "Diamond"
+    hex_color: "#3de2ff"
+    material: "SHULKER_BOX"
+    custom_model_data: 0
+```
 
 ## API and internals (for developers)
 
 - Main plugin: `com.axther.vexBags.VexBags`
 - Keys: `backpack_id`, `backpack_tier`, `backpack_ver`, `backpack_sess`, `backpack_sig`
-- Storage model: YAML of per-backpack entries keyed by `stackKey` (canonical serialized stack + SHA-256) with counts; includes owner index
+- Storage model: JSON of per-backpack entries keyed by `stackKey` (canonical serialized stack + SHA-256) with counts; includes owner index
 - UI: dynamic inventory sized to tier capacity; GUI shows top items and both unique-type and capacity progress bars
 
 ## Roadmap ideas

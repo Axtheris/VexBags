@@ -1,5 +1,5 @@
 name: VexBags
-version: '1.0'
+version: '${project.version}'
 main: com.axther.vexBags.VexBags
 api-version: '1.21'
 load: STARTUP

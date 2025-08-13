@@ -99,8 +99,18 @@ public class AdminBackpackCommand implements CommandExecutor, org.bukkit.command
                     // Charge if configured
                     var mgr = com.axther.vexBags.VexBags.getInstance().getIntegrations();
                     if (mgr != null) {
+                        double amount = com.axther.vexBags.VexBags.getInstance().getConfig().getDouble("integrations.vault.costs.admin_restore", 0.0);
                         boolean ok = mgr.chargeForAdminRestore(targetPlayer);
-                        if (!ok) { com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<red>Insufficient funds.</red>"); return true; }
+                        if (!ok) {
+                            String msg = com.axther.vexBags.VexBags.getInstance().getConfig().getString("messages.vault.admin_restore_insufficient", "<red>Insufficient funds: need <white>$%amount%</white>.</red>");
+                            msg = msg.replace("%amount%", String.format(java.util.Locale.US, "%.2f", amount));
+                            com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, com.axther.vexBags.util.ItemUtil.mm().deserialize(msg));
+                            return true;
+                        } else if (amount > 0.0) {
+                            String msg = com.axther.vexBags.VexBags.getInstance().getConfig().getString("messages.vault.admin_restore_charged", "<gray>Charged <white>$%amount%</white> for admin restore.</gray>");
+                            msg = msg.replace("%amount%", String.format(java.util.Locale.US, "%.2f", amount));
+                            com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, com.axther.vexBags.util.ItemUtil.mm().deserialize(msg));
+                        }
                     }
                     // Give a new item pointing to the same backpack id
                     var item = com.axther.vexBags.util.ItemUtil.createNewBackpackItem(data.getTier());

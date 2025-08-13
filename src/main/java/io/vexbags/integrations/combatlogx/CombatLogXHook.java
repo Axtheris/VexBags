@@ -33,6 +33,13 @@ public final class CombatLogXHook implements Listener {
                     var top = p.getOpenInventory().getTopInventory();
                     if (top != null && top.getHolder() instanceof com.axther.vexBags.gui.BackpackHolder) {
                         p.closeInventory();
+                        // Optional feedback message
+                        try {
+                            if (plugin.getConfig().getBoolean("messages.enabled", true)) {
+                                String msg = plugin.getConfig().getString("messages.combatlogx.closed_on_tag", "<red>Backpack closed: you are in combat.</red>");
+                                com.axther.vexBags.util.ItemUtil.sendPrefixed(p, com.axther.vexBags.util.ItemUtil.mm().deserialize(msg));
+                            }
+                        } catch (Throwable ignored) {}
                     }
                 } catch (Throwable ignored) {}
             }

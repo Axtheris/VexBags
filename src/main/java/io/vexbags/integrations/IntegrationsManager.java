@@ -162,17 +162,42 @@ public final class IntegrationsManager {
 
     public boolean isAllowedToOpen(Player player, Location location) {
         if (!masterEnabled) return true;
-        if (combatLogXHook != null && combatLogXHook.isTagged(player)) return false;
-        if (worldGuardHook != null && !worldGuardHook.isAllowedAt(player, location)) return false;
+        if (combatLogXHook != null && combatLogXHook.isTagged(player)) {
+            sendMessage(player, "messages.open_denied.combatlogx");
+            return false;
+        }
+        if (worldGuardHook != null && !worldGuardHook.isAllowedAt(player, location)) {
+            sendMessage(player, "messages.open_denied.worldguard");
+            return false;
+        }
         if (townyHook != null) {
             boolean requireContainerTrust = plugin.getConfig().getBoolean("integrations.towny.require_container_trust", true);
-            if (!townyHook.hasRequiredTrust(player, location, requireContainerTrust)) return false;
+            if (!townyHook.hasRequiredTrust(player, location, requireContainerTrust)) {
+                sendMessage(player, "messages.open_denied.towny");
+                return false;
+            }
         }
         if (griefPreventionHook != null) {
             boolean requireContainerTrust = plugin.getConfig().getBoolean("integrations.griefprevention.require_container_trust", true);
-            if (!griefPreventionHook.hasContainerTrust(player, location, requireContainerTrust)) return false;
+            if (!griefPreventionHook.hasContainerTrust(player, location, requireContainerTrust)) {
+                sendMessage(player, "messages.open_denied.griefprevention");
+                return false;
+            }
         }
         return true;
+    }
+
+    private void sendMessage(org.bukkit.command.CommandSender target, String path) {
+        try {
+            if (!plugin.getConfig().getBoolean("messages.enabled", true)) return;
+            String msg = plugin.getConfig().getString(path);
+            if (msg == null || msg.isEmpty()) {
+                String generic = plugin.getConfig().getString("messages.open_denied.generic", "<red>You cannot open your backpack here.</red>");
+                com.axther.vexBags.util.ItemUtil.sendPrefixed(target, com.axther.vexBags.util.ItemUtil.mm().deserialize(generic));
+                return;
+            }
+            com.axther.vexBags.util.ItemUtil.sendPrefixed(target, com.axther.vexBags.util.ItemUtil.mm().deserialize(msg));
+        } catch (Throwable ignored) {}
     }
 
     public ItemStack applyBackpackCosmetics(ItemStack base, BackpackTier tier) {

@@ -111,3 +111,24 @@ integrations:
     require_container_trust: true
 
 
+messages:
+  enabled: true
+
+  open_denied:
+    generic: "<red>You cannot open your backpack here.</red>"
+    combatlogx: "<red>You cannot open a backpack while in combat.</red>"
+    worldguard: "<red>You cannot open a backpack in this region.</red>"
+    towny: "<red>You lack the required trust to open a backpack here.</red>"
+    griefprevention: "<red>You need container trust to open a backpack here.</red>"
+
+  combatlogx:
+    closed_on_tag: "<red>Backpack closed: you are in combat.</red>"
+
+  vault:
+    upgrade_charged: "<gray>Charged <white>$%amount%</white> for upgrading to <white>%tier%</white>.</gray>"
+    upgrade_insufficient: "<red>You need <white>$%amount%</white> to upgrade to <white>%tier%</white>.</red>"
+    admin_restore_charged: "<gray>Charged <white>$%amount%</white> for admin restore.</gray>"
+    admin_restore_insufficient: "<red>Insufficient funds: need <white>$%amount%</white>.</red>"
+
+  signature_invalid: "<red>This backpack failed verification.</red>"
+

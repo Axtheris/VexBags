@@ -44,10 +44,19 @@ public class BackpackListeners implements Listener {
 				// If crafting higher than LEATHER and ingredients included lower-tier backpack, it's an upgrade
 				boolean upgrade = tier != BackpackTier.LEATHER;
 				if (upgrade) {
+					double amount = com.axther.vexBags.VexBags.getInstance().getConfig().getDouble("integrations.vault.costs.upgrade_per_tier." + tier.name().toLowerCase(), 0.0);
 					boolean ok = mgr.chargeForUpgrade(p, tier);
 					if (!ok) {
 						event.setCancelled(true);
+						String msg = com.axther.vexBags.VexBags.getInstance().getConfig().getString("messages.vault.upgrade_insufficient", "<red>You need <white>$%amount%</white> to upgrade to <white>%tier%</white>.</red>");
+						msg = msg.replace("%amount%", String.format(java.util.Locale.US, "%.2f", amount)).replace("%tier%", tier.name().toLowerCase());
+						com.axther.vexBags.util.ItemUtil.sendPrefixed(p, com.axther.vexBags.util.ItemUtil.mm().deserialize(msg));
 						return;
+					}
+					if (amount > 0.0) {
+						String msg = com.axther.vexBags.VexBags.getInstance().getConfig().getString("messages.vault.upgrade_charged", "<gray>Charged <white>$%amount%</white> for upgrading to <white>%tier%</white>.</gray>");
+						msg = msg.replace("%amount%", String.format(java.util.Locale.US, "%.2f", amount)).replace("%tier%", tier.name().toLowerCase());
+						com.axther.vexBags.util.ItemUtil.sendPrefixed(p, com.axther.vexBags.util.ItemUtil.mm().deserialize(msg));
 					}
 				}
 			}
@@ -116,7 +125,12 @@ public class BackpackListeners implements Listener {
 		// Verify signature before allowing interaction
         if (!ItemUtil.verifyBackpackSignature(item)) {
             event.setCancelled(true);
-            com.axther.vexBags.util.ItemUtil.sendPrefixed(event.getPlayer(), net.kyori.adventure.text.Component.text("This backpack failed verification.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
+            try {
+                if (com.axther.vexBags.VexBags.getInstance().getConfig().getBoolean("messages.enabled", true)) {
+                    String msg = com.axther.vexBags.VexBags.getInstance().getConfig().getString("messages.signature_invalid", "<red>This backpack failed verification.</red>");
+                    com.axther.vexBags.util.ItemUtil.sendPrefixed(event.getPlayer(), com.axther.vexBags.util.ItemUtil.mm().deserialize(msg));
+                }
+            } catch (Throwable ignored) {}
             return;
         }
 		event.setCancelled(true);

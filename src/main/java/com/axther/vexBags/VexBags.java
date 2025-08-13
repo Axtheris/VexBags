@@ -28,6 +28,7 @@ public final class VexBags extends JavaPlugin {
 	private NamespacedKey keyBackpackVersion;
 	private NamespacedKey keyBackpackSession;
 	private String serverSecret;
+	private io.vexbags.integrations.IntegrationsManager integrations;
 
 	@Override
 	public void onEnable() {
@@ -61,6 +62,10 @@ public final class VexBags extends JavaPlugin {
 		BackpackStorage.get().init(this);
 		TierRegistry.load(this);
 
+		// Integrations
+		this.integrations = new io.vexbags.integrations.IntegrationsManager(this);
+		this.integrations.init();
+
 		// Register commands
 		if (getCommand("vexbags") != null) {
 			var cmd = getCommand("vexbags");
@@ -88,6 +93,7 @@ public final class VexBags extends JavaPlugin {
 	public void onDisable() {
 		// Persist any pending changes
 		BackpackStorage.get().saveNow();
+		if (this.integrations != null) this.integrations.shutdown();
 	}
 
 	public static VexBags getInstance() {
@@ -112,6 +118,8 @@ public final class VexBags extends JavaPlugin {
 
 	public String getServerSecret() { return serverSecret; }
 
+	public io.vexbags.integrations.IntegrationsManager getIntegrations() { return integrations; }
+
 	public void reloadPluginConfigAndSecret() {
 		reloadConfig();
 		String secret = getConfig().getString("secret");
@@ -122,6 +130,7 @@ public final class VexBags extends JavaPlugin {
 		}
 		this.serverSecret = secret;
 		com.axther.vexBags.tier.TierRegistry.load(this);
+		if (this.integrations != null) this.integrations.reload();
 	}
 
 	private void registerBackpackRecipes() {

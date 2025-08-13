@@ -5,6 +5,15 @@ api-version: '1.21'
 load: STARTUP
 authors: [ 7vexes, Axther ]
 description: Just another backpack plugin.
+softdepend:
+  - Vault
+  - PlaceholderAPI
+  - WorldGuard
+  - CombatLogX
+  - ItemsAdder
+  - Oraxen
+  - Towny
+  - GriefPrevention
 
 commands:
   vexbags:
@@ -14,7 +23,7 @@ commands:
     aliases: [vbag, vbags, vb]
   vexbagsadmin:
     description: Admin tools for managing backpacks
-    usage: /<command> <list|open|delete|restore> [...]
+    usage: /<command> <list|open|delete|restore|reload> [...]
     permission: vexbags.admin
 
 permissions:
@@ -35,4 +44,7 @@ permissions:
     default: op
   vexbags.admin.restore:
     description: Allows restoring a backpack to a player
+    default: op
+  vexbags.admin.reload:
+    description: Allows reloading VexBags configuration
     default: op

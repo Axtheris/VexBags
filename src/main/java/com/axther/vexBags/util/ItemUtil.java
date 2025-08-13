@@ -113,6 +113,11 @@ public final class ItemUtil {
         pdc.set(VexBags.getInstance().getKeyBackpackSession(), PersistentDataType.STRING, java.util.UUID.randomUUID().toString());
 		item.setItemMeta(meta);
         updateBackpackLore(item, null);
+        // Apply cosmetic overrides if configured
+        var mgr = VexBags.getInstance().getIntegrations();
+        if (mgr != null) {
+            item = mgr.applyBackpackCosmetics(item, tier);
+        }
         signBackpack(item);
 		return item;
 	}
@@ -410,8 +415,6 @@ public final class ItemUtil {
         return expected.equals(sig);
     }
 
-    public static void sendPrefixed(org.bukkit.command.CommandSender sender, String miniMessage) {
-        sender.sendMessage(MM.deserialize("<gray>[</gray><color:#6b3fa0>" + toSmallCaps("vexbags") + "</color><gray>]</gray> " + miniMessage).decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
-    }
+    // removed duplicate overload
 }
 

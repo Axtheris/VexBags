@@ -55,3 +55,59 @@ tiers:
     custom_model_data: 0
 
 
+integrations:
+  enabled: true
+  debug: false
+
+  vault:
+    enabled: false
+    costs:
+      upgrade_per_tier:
+        leather: 0.0
+        copper: 0.0
+        iron: 0.0
+        gold: 0.0
+        diamond: 0.0
+        netherite: 0.0
+      admin_restore: 0.0
+
+  placeholderapi:
+    enabled: true
+
+  worldguard:
+    enabled: true
+    flag_default: ALLOW
+
+  combatlogx:
+    enabled: true
+    close_on_tag: true
+
+  itemsadder:
+    enabled: false
+    tiers:
+      leather:   { item: "", custom_model_data: 0 }
+      copper:    { item: "", custom_model_data: 0 }
+      iron:      { item: "", custom_model_data: 0 }
+      gold:      { item: "", custom_model_data: 0 }
+      diamond:   { item: "", custom_model_data: 0 }
+      netherite: { item: "", custom_model_data: 0 }
+
+  oraxen:
+    enabled: false
+    tiers:
+      leather:   { item: "", custom_model_data: 0 }
+      copper:    { item: "", custom_model_data: 0 }
+      iron:      { item: "", custom_model_data: 0 }
+      gold:      { item: "", custom_model_data: 0 }
+      diamond:   { item: "", custom_model_data: 0 }
+      netherite: { item: "", custom_model_data: 0 }
+
+  towny:
+    enabled: true
+    require_container_trust: true
+
+  griefprevention:
+    enabled: true
+    require_container_trust: true
+
+

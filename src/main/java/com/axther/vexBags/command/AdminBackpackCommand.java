@@ -28,6 +28,10 @@ public class AdminBackpackCommand implements CommandExecutor, org.bukkit.command
 
         String sub = args[0].toLowerCase();
         switch (sub) {
+            case "reload":
+                com.axther.vexBags.VexBags.getInstance().reloadPluginConfigAndSecret();
+                com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<gray>Configuration reloaded.</gray>");
+                return true;
             case "list":
                 if (args.length < 2) {
                     com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<gray>Usage:</gray> <white>/vexbagsadmin list <player></white>");
@@ -92,6 +96,12 @@ public class AdminBackpackCommand implements CommandExecutor, org.bukkit.command
                     if (targetPlayer == null) { com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<red>Player not online.</red>"); return true; }
                     BackpackData data = BackpackStorage.get().get(id);
                     if (data == null) { com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<red>Backpack not found.</red>"); return true; }
+                    // Charge if configured
+                    var mgr = com.axther.vexBags.VexBags.getInstance().getIntegrations();
+                    if (mgr != null) {
+                        boolean ok = mgr.chargeForAdminRestore(targetPlayer);
+                        if (!ok) { com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<red>Insufficient funds.</red>"); return true; }
+                    }
                     // Give a new item pointing to the same backpack id
                     var item = com.axther.vexBags.util.ItemUtil.createNewBackpackItem(data.getTier());
                     com.axther.vexBags.util.ItemUtil.setBackpackId(item, id);

@@ -37,6 +37,21 @@ public class BackpackListeners implements Listener {
 		UUID id = ItemUtil.getBackpackId(result);
 		BackpackTier tier = ItemUtil.getTier(result);
 		if (tier == null) return;
+		// Charge via Vault if configured on upgrade (not for base crafting)
+		if (event.getWhoClicked() instanceof Player p) {
+			var mgr = com.axther.vexBags.VexBags.getInstance().getIntegrations();
+			if (mgr != null) {
+				// If crafting higher than LEATHER and ingredients included lower-tier backpack, it's an upgrade
+				boolean upgrade = tier != BackpackTier.LEATHER;
+				if (upgrade) {
+					boolean ok = mgr.chargeForUpgrade(p, tier);
+					if (!ok) {
+						event.setCancelled(true);
+						return;
+					}
+				}
+			}
+		}
 		// Try preserve ID from any input backpack (upgrade path)
 		for (ItemStack matrixItem : event.getInventory().getMatrix()) {
 			if (matrixItem == null) continue;
@@ -53,6 +68,14 @@ public class BackpackListeners implements Listener {
 		data.setTier(tier);
 		ItemUtil.updateBackpackLore(result, data);
 		ItemUtil.syncShulkerPreview(result, data);
+		// Apply cosmetics if configured
+		var mgr2 = com.axther.vexBags.VexBags.getInstance().getIntegrations();
+		if (mgr2 != null) {
+			ItemStack cosmetic = mgr2.applyBackpackCosmetics(result, tier);
+			if (cosmetic != result) {
+				try { event.getInventory().setResult(cosmetic); } catch (Throwable ignored) {}
+			}
+		}
 		BackpackStorage.get().scheduleSave();
 	}
 
@@ -84,6 +107,12 @@ public class BackpackListeners implements Listener {
 		if (event.getHand() != EquipmentSlot.HAND) return;
 		ItemStack item = event.getItem();
 		if (!ItemUtil.isBackpack(item)) return;
+		// Integrations gating
+		var mgr = com.axther.vexBags.VexBags.getInstance().getIntegrations();
+		if (mgr != null && !mgr.isAllowedToOpen(event.getPlayer(), event.getPlayer().getLocation())) {
+			event.setCancelled(true);
+			return;
+		}
 		// Verify signature before allowing interaction
         if (!ItemUtil.verifyBackpackSignature(item)) {
             event.setCancelled(true);
@@ -176,7 +205,7 @@ public class BackpackListeners implements Listener {
         if (click == ClickType.SWAP_OFFHAND) {
             // F: deposit all of that type (sweep entire inventory for same key), honoring per-slot cap
             int total = 0;
-            int perSlotMax = tier.getPerSlotMax();
+			int perSlotMax = tier.getPerSlotMax();
             for (int i = 0; i < player.getInventory().getSize(); i++) {
                 ItemStack it = player.getInventory().getItem(i);
                 if (it == null || it.getType() == Material.AIR) continue;
@@ -205,7 +234,7 @@ public class BackpackListeners implements Listener {
             if (basis == null || basis.getType() == Material.AIR) return;
             String key = com.axther.vexBags.util.ItemUtil.stackKey(basis);
             int total = 0;
-            int perSlotMax = tier.getPerSlotMax();
+			int perSlotMax = tier.getPerSlotMax();
             for (int i = 0; i < player.getInventory().getSize(); i++) {
                 ItemStack it = player.getInventory().getItem(i);
                 if (it == null || it.getType() == Material.AIR) continue;

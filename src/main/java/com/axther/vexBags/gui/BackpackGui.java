@@ -27,6 +27,13 @@ public class BackpackGui {
 	}
 
 	public void open(Player player) {
+		var mgr = com.axther.vexBags.VexBags.getInstance().getIntegrations();
+		if (mgr != null && !mgr.isMasterEnabled()) {
+			// continue
+		} else if (mgr != null && !mgr.isAllowedToOpen(player, player.getLocation())) {
+			com.axther.vexBags.util.ItemUtil.sendPrefixed(player, net.kyori.adventure.text.Component.text("You cannot open your backpack here.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
+			return;
+		}
 		int size = Math.max(9, Math.min(54, ((tier.getStorageSlots() + 8) / 9) * 9));
 		BackpackHolder holder = new BackpackHolder(backpackId, tier);
         this.inventory = Bukkit.createInventory(holder, size, com.axther.vexBags.util.ItemUtil.mm().deserialize("<color:#" + com.axther.vexBags.util.ItemUtil.normalizeHex(tier.getHexColor()) + ">" + com.axther.vexBags.util.ItemUtil.toSmallCaps(tier.getDisplayName() + " backpack") + "</color>").decoration(TextDecoration.ITALIC, false));

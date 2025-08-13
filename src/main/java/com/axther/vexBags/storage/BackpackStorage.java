@@ -20,21 +20,16 @@ public class BackpackStorage {
 	public static BackpackStorage get() { return INSTANCE; }
 
 	private final Map<UUID, BackpackData> idToData = new HashMap<>();
-    private File dataFile;
-    private FileConfiguration config;
-    private File indexFile;
-    // Reserved for future use (external tools may read it from disk directly)
-    // private FileConfiguration indexConfig;
+    private File jsonDataFile;
+    private File jsonIndexFile;
     private VexBags plugin;
     private BukkitTask pendingSaveTask;
 
     public void init(VexBags plugin) {
         this.plugin = plugin;
         if (!plugin.getDataFolder().exists()) plugin.getDataFolder().mkdirs();
-        this.dataFile = new File(plugin.getDataFolder(), "backpacks.yml");
-        this.config = YamlConfiguration.loadConfiguration(dataFile);
-        this.indexFile = new File(plugin.getDataFolder(), "index.yml");
-        // this.indexConfig = YamlConfiguration.loadConfiguration(indexFile);
+        this.jsonDataFile = new File(plugin.getDataFolder(), "backpacks.json");
+        this.jsonIndexFile = new File(plugin.getDataFolder(), "index.json");
         loadAll();
     }
 
@@ -50,39 +45,35 @@ public class BackpackStorage {
 	public synchronized BackpackData get(UUID id) { return idToData.get(id); }
 
     public synchronized void saveNow() {
-        if (dataFile == null) return; // not initialized
-        FileConfiguration snapshot = new YamlConfiguration();
-        ConfigurationSection root = snapshot.createSection("backpacks");
+        if (jsonDataFile == null) return;
+        java.util.List<java.util.Map<String,Object>> jsonList = new java.util.ArrayList<>();
         for (BackpackData data : idToData.values()) {
-            ConfigurationSection sec = root.createSection(data.getId().toString());
-            sec.set("tier", data.getTier().name());
-            if (data.getOwnerId() != null) sec.set("owner", data.getOwnerId().toString());
-            sec.set("created_at", data.getCreatedAtEpochMs());
-            sec.set("updated_at", data.getUpdatedAtEpochMs());
-            ConfigurationSection items = sec.createSection("items");
-            Map<String, Integer> counts = data.snapshotCounts();
-            for (Map.Entry<String, Integer> e : counts.entrySet()) {
-                items.set(e.getKey(), e.getValue());
-            }
+            java.util.Map<String,Object> jo = new java.util.LinkedHashMap<>();
+            jo.put("id", data.getId().toString());
+            jo.put("tier", data.getTier().name());
+            if (data.getOwnerId() != null) jo.put("owner", data.getOwnerId().toString());
+            jo.put("created_at", data.getCreatedAtEpochMs());
+            jo.put("updated_at", data.getUpdatedAtEpochMs());
+            jo.put("items", data.snapshotCounts());
+            jsonList.add(jo);
         }
         try {
-            snapshot.save(dataFile);
-            this.config = snapshot;
-            // Build and save owner index
-            if (indexFile != null) {
-                FileConfiguration idx = new YamlConfiguration();
-                ConfigurationSection owners = idx.createSection("owners");
-                for (BackpackData data : idToData.values()) {
-                    if (data.getOwnerId() == null) continue;
-                    String key = data.getOwnerId().toString();
-                    ConfigurationSection list = owners.getConfigurationSection(key);
-                    if (list == null) list = owners.createSection(key);
-                    list.set(data.getId().toString(), data.getTier().name());
-                }
-                idx.save(indexFile);
+            var gson = new com.google.gson.GsonBuilder().setPrettyPrinting().create();
+            try (java.io.FileWriter fw = new java.io.FileWriter(jsonDataFile, java.nio.charset.StandardCharsets.UTF_8)) {
+                gson.toJson(jsonList, fw);
             }
-        } catch (IOException e) {
-            Bukkit.getLogger().severe("[VexBags] Failed to save backpacks.yml: " + e.getMessage());
+            java.util.Map<String, java.util.Map<String,String>> ownersJson = new java.util.LinkedHashMap<>();
+            for (BackpackData data : idToData.values()) {
+                if (data.getOwnerId() == null) continue;
+                String key = data.getOwnerId().toString();
+                ownersJson.computeIfAbsent(key, k -> new java.util.LinkedHashMap<>())
+                        .put(data.getId().toString(), data.getTier().name());
+            }
+            try (java.io.FileWriter fw = new java.io.FileWriter(jsonIndexFile, java.nio.charset.StandardCharsets.UTF_8)) {
+                gson.toJson(ownersJson, fw);
+            }
+        } catch (java.io.IOException e) {
+            Bukkit.getLogger().severe("[VexBags] Failed to save backpack json: " + e.getMessage());
         }
     }
 
@@ -96,41 +87,44 @@ public class BackpackStorage {
     }
 
 	private synchronized void loadAll() {
-		idToData.clear();
-        ConfigurationSection root = config.getConfigurationSection("backpacks");
-		if (root == null) return;
-		for (String idStr : root.getKeys(false)) {
-			UUID id;
-			try { id = UUID.fromString(idStr); } catch (IllegalArgumentException ex) { continue; }
-			ConfigurationSection sec = root.getConfigurationSection(idStr);
-			if (sec == null) continue;
-			BackpackTier tier = BackpackTier.fromString(sec.getString("tier", "LEATHER"));
-			if (tier == null) tier = BackpackTier.LEATHER;
-			BackpackData data = new BackpackData(id, tier);
-            String owner = sec.getString("owner", null);
-            if (owner != null) {
-                try { data.setOwnerId(UUID.fromString(owner)); } catch (IllegalArgumentException ignored) {}
-            }
-            data.setTier(tier);
-            // Timestamps
-            data.touch();
-            ConfigurationSection items = sec.getConfigurationSection("items");
-            if (items != null) {
-                for (String key : items.getKeys(false)) {
-                    int amount = items.getInt(key, 0);
-                    if (amount > 0) {
-                        // reconstruct a basic template from key is non-trivial; we'll store minimal proxy (material only)
-                        // For legacy entries, key could be a material name; attempt match
-                        Material mat = Material.matchMaterial(key);
-                        if (mat != null) {
-                            org.bukkit.inventory.ItemStack proxy = new org.bukkit.inventory.ItemStack(mat, 1);
-                            data.add(proxy, com.axther.vexBags.util.ItemUtil.stackKey(proxy), amount);
+        idToData.clear();
+        // Prefer JSON if present
+        if (jsonDataFile.exists()) {
+            try (java.io.FileReader fr = new java.io.FileReader(jsonDataFile, java.nio.charset.StandardCharsets.UTF_8)) {
+                var gson = new com.google.gson.Gson();
+                com.google.gson.JsonArray arr = gson.fromJson(fr, com.google.gson.JsonArray.class);
+                if (arr != null) {
+                    for (var el : arr) {
+                        if (!el.isJsonObject()) continue;
+                        var o = el.getAsJsonObject();
+                        String idStr = o.get("id").getAsString();
+                        UUID id;
+                        try { id = UUID.fromString(idStr); } catch (Exception ex) { continue; }
+                        String tierName = o.get("tier").getAsString();
+                        BackpackTier tier = BackpackTier.fromString(tierName);
+                        if (tier == null) tier = BackpackTier.LEATHER;
+                        BackpackData data = new BackpackData(id, tier);
+                        if (o.has("owner")) { try { data.setOwnerId(UUID.fromString(o.get("owner").getAsString())); } catch (Exception ignore) {} }
+                        if (o.has("items")) {
+                            var items = o.getAsJsonObject("items");
+                            for (var e : items.entrySet()) {
+                                String key = e.getKey();
+                                int amount = e.getValue().getAsInt();
+                                Material mat = Material.matchMaterial(key);
+                                org.bukkit.inventory.ItemStack proxy = new org.bukkit.inventory.ItemStack(mat == null ? Material.STONE : mat, 1);
+                                data.add(proxy, com.axther.vexBags.util.ItemUtil.stackKey(proxy), amount);
+                            }
                         }
+                        idToData.put(id, data);
                     }
                 }
+            } catch (Exception ex) {
+                Bukkit.getLogger().severe("[VexBags] Failed to load backpack json: " + ex.getMessage());
             }
-			idToData.put(id, data);
-		}
+            return;
+        }
+        // No YAML fallback: initialize empty JSON file if missing
+        saveNow();
 	}
 
     public synchronized void setOwner(UUID backpackId, UUID ownerId) {
@@ -142,6 +136,15 @@ public class BackpackStorage {
 
     public synchronized Map<UUID, BackpackData> all() {
         return new HashMap<>(idToData);
+    }
+
+    public synchronized boolean deleteBackpack(UUID id) {
+        BackpackData removed = idToData.remove(id);
+        if (removed != null) {
+            scheduleSave();
+            return true;
+        }
+        return false;
     }
 }
 

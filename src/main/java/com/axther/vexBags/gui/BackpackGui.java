@@ -49,6 +49,8 @@ public class BackpackGui {
             ItemStack display = st.getTemplate().clone();
             ItemMeta meta = display.getItemMeta();
             List<Component> lore = new ArrayList<>();
+            String name = display.getItemMeta() != null && display.getItemMeta().hasDisplayName() ? net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(display.getItemMeta().displayName()) : display.getType().name().toLowerCase();
+            lore.add(com.axther.vexBags.util.ItemUtil.mm().deserialize("<gray>" + com.axther.vexBags.util.ItemUtil.toSmallCaps("item:") + "</gray> <white>" + name + "</white>").decoration(TextDecoration.ITALIC, false));
             lore.add(com.axther.vexBags.util.ItemUtil.mm().deserialize("<gray>" + com.axther.vexBags.util.ItemUtil.toSmallCaps("total:") + "</gray> <white>" + st.getAmount() + "</white>").decoration(TextDecoration.ITALIC, false));
             lore.add(com.axther.vexBags.util.ItemUtil.CLICK_HINT);
             meta.lore(lore);

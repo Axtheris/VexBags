@@ -3,8 +3,6 @@ package com.axther.vexBags.command;
 import com.axther.vexBags.storage.BackpackStorage;
 import com.axther.vexBags.tier.BackpackTier;
 import com.axther.vexBags.util.ItemUtil;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -30,8 +28,8 @@ public class VexBagsCommand implements CommandExecutor, org.bukkit.command.TabCo
 			BackpackStorage.get().getOrCreate(id, tier).setOwnerId(player.getUniqueId());
 			BackpackStorage.get().scheduleSave();
 		}
-		player.getInventory().addItem(bp);
-		player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>gave you a </gray><color:#" + com.axther.vexBags.util.ItemUtil.normalizeHex(tier.getHexColor()) + ">" + com.axther.vexBags.util.ItemUtil.toSmallCaps(tier.getDisplayName() + " backpack") + "</color>").decoration(TextDecoration.ITALIC, false));
+        player.getInventory().addItem(bp);
+        com.axther.vexBags.util.ItemUtil.sendPrefixed(player, "<gray>gave you a </gray><color:#" + com.axther.vexBags.util.ItemUtil.normalizeHex(tier.getHexColor()) + ">" + com.axther.vexBags.util.ItemUtil.toSmallCaps(tier.getDisplayName() + " backpack") + "</color>");
 		return true;
 	}
 

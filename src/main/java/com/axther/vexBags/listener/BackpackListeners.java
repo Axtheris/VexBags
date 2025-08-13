@@ -85,11 +85,11 @@ public class BackpackListeners implements Listener {
 		ItemStack item = event.getItem();
 		if (!ItemUtil.isBackpack(item)) return;
 		// Verify signature before allowing interaction
-		if (!ItemUtil.verifyBackpackSignature(item)) {
-			event.setCancelled(true);
-			((Player) event.getPlayer()).sendMessage(net.kyori.adventure.text.Component.text("This backpack failed verification.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
-			return;
-		}
+        if (!ItemUtil.verifyBackpackSignature(item)) {
+            event.setCancelled(true);
+            com.axther.vexBags.util.ItemUtil.sendPrefixed(event.getPlayer(), net.kyori.adventure.text.Component.text("This backpack failed verification.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
+            return;
+        }
 		event.setCancelled(true);
 		UUID id = ItemUtil.getBackpackId(item);
 		BackpackTier tier = ItemUtil.getTier(item);
@@ -174,26 +174,30 @@ public class BackpackListeners implements Listener {
         ClickType click = event.getClick();
 
         if (click == ClickType.SWAP_OFFHAND) {
-            // F: deposit all of that type (sweep entire inventory for same key)
+            // F: deposit all of that type (sweep entire inventory for same key), honoring per-slot cap
             int total = 0;
+            int perSlotMax = tier.getPerSlotMax();
             for (int i = 0; i < player.getInventory().getSize(); i++) {
                 ItemStack it = player.getInventory().getItem(i);
                 if (it == null || it.getType() == Material.AIR) continue;
                 if (ItemUtil.isBackpack(it)) continue;
                 if (!com.axther.vexBags.util.ItemUtil.stackKey(it).equals(mKey)) continue;
-                int add = it.getAmount();
                 boolean isNewType = data.getEntries().get(mKey) == null;
                 if (isNewType && data.totalItemTypes() >= tier.getStorageSlots()) {
-                    player.sendMessage(net.kyori.adventure.text.Component.text("Backpack is out of storage slots for new item types.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
+                    com.axther.vexBags.util.ItemUtil.sendPrefixed(player, net.kyori.adventure.text.Component.text("Backpack is out of storage slots for new item types.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
                     break;
                 }
-                data.add(it, mKey, add);
-                total += add;
-                player.getInventory().setItem(i, null);
+                int current = data.getCountByKey(mKey);
+                int space = Math.max(0, perSlotMax - current);
+                if (space <= 0) break;
+                int take = Math.min(space, it.getAmount());
+                if (take <= 0) continue;
+                data.add(it, mKey, take);
+                total += take;
+                it.setAmount(it.getAmount() - take);
+                if (it.getAmount() <= 0) player.getInventory().setItem(i, null);
             }
-            if (total > 0) {
-                BackpackStorage.get().scheduleSave();
-            }
+            if (total > 0) BackpackStorage.get().scheduleSave();
         } else if (click == ClickType.DOUBLE_CLICK) {
             // Pick up + double-click: store all of same type from inventory
             ItemStack basis = event.getCursor();
@@ -201,20 +205,25 @@ public class BackpackListeners implements Listener {
             if (basis == null || basis.getType() == Material.AIR) return;
             String key = com.axther.vexBags.util.ItemUtil.stackKey(basis);
             int total = 0;
+            int perSlotMax = tier.getPerSlotMax();
             for (int i = 0; i < player.getInventory().getSize(); i++) {
                 ItemStack it = player.getInventory().getItem(i);
                 if (it == null || it.getType() == Material.AIR) continue;
                 if (ItemUtil.isBackpack(it)) continue;
                 if (!com.axther.vexBags.util.ItemUtil.stackKey(it).equals(key)) continue;
-                int add = it.getAmount();
                 boolean isNewType = data.getEntries().get(key) == null;
                 if (isNewType && data.totalItemTypes() >= tier.getStorageSlots()) {
-                    player.sendMessage(net.kyori.adventure.text.Component.text("Backpack is out of storage slots for new item types.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
+                    com.axther.vexBags.util.ItemUtil.sendPrefixed(player, net.kyori.adventure.text.Component.text("Backpack is out of storage slots for new item types.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
                     break;
                 }
-                data.add(it, key, add);
-                total += add;
-                player.getInventory().setItem(i, null);
+                int current = data.getCountByKey(key);
+                int space = Math.max(0, perSlotMax - current);
+                if (space <= 0) break;
+                int take = Math.min(space, it.getAmount());
+                data.add(it, key, take);
+                total += take;
+                it.setAmount(it.getAmount() - take);
+                if (it.getAmount() <= 0) player.getInventory().setItem(i, null);
             }
             // Clear cursor as if collected (compatible approach)
             player.setItemOnCursor(null);
@@ -223,10 +232,14 @@ public class BackpackListeners implements Listener {
             }
         } else if (click == ClickType.SHIFT_LEFT || click == ClickType.SHIFT_RIGHT) {
             // Quick-move like chest: deposit the whole stack
-            int amount = moving.getAmount();
+            int perSlotMax = tier.getPerSlotMax();
+            int current = data.getCountByKey(mKey);
+            int space = Math.max(0, perSlotMax - current);
+            if (space <= 0) return;
+            int amount = Math.min(space, moving.getAmount());
             boolean isNewType = data.getEntries().get(mKey) == null;
             if (isNewType && data.totalItemTypes() >= tier.getStorageSlots()) {
-                player.sendMessage(net.kyori.adventure.text.Component.text("Backpack is out of storage slots for new item types.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
+                com.axther.vexBags.util.ItemUtil.sendPrefixed(player, net.kyori.adventure.text.Component.text("Backpack is out of storage slots for new item types.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
                 return;
             }
             data.add(moving, mKey, amount);

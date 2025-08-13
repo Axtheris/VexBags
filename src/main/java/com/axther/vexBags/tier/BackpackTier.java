@@ -25,11 +25,25 @@ public enum BackpackTier {
 	}
 
 	public String getDisplayName() {
-		return displayName;
+		try {
+			org.bukkit.configuration.file.FileConfiguration cfg = com.axther.vexBags.VexBags.getInstance().getConfig();
+			String path = "tiers." + name().toLowerCase() + ".display_name";
+			String v = cfg.getString(path, displayName);
+			return (v == null || v.isEmpty()) ? displayName : v;
+		} catch (Exception ignore) {
+			return displayName;
+		}
 	}
 
 	public String getHexColor() {
-		return hexColor;
+		try {
+			org.bukkit.configuration.file.FileConfiguration cfg = com.axther.vexBags.VexBags.getInstance().getConfig();
+			String path = "tiers." + name().toLowerCase() + ".hex_color";
+			String v = cfg.getString(path, hexColor);
+			return (v == null || v.isEmpty()) ? hexColor : v;
+		} catch (Exception ignore) {
+			return hexColor;
+		}
 	}
 
 	public Material getUpgradeMaterial() {
@@ -51,6 +65,40 @@ public enum BackpackTier {
 
 	public int getUpgradeSlots() {
 		return upgradeSlots;
+	}
+
+	public org.bukkit.Material getBackpackMaterial() {
+		try {
+			org.bukkit.configuration.file.FileConfiguration cfg = com.axther.vexBags.VexBags.getInstance().getConfig();
+			String p = "tiers." + name().toLowerCase() + ".material";
+			String mat = cfg.getString(p, "SHULKER_BOX");
+			org.bukkit.Material m = org.bukkit.Material.matchMaterial(mat);
+			return m != null ? m : org.bukkit.Material.SHULKER_BOX;
+		} catch (Exception ignore) {
+			return org.bukkit.Material.SHULKER_BOX;
+		}
+	}
+
+	public int getCustomModelData() {
+		try {
+			org.bukkit.configuration.file.FileConfiguration cfg = com.axther.vexBags.VexBags.getInstance().getConfig();
+			String p = "tiers." + name().toLowerCase() + ".custom_model_data";
+			return cfg.getInt(p, 0);
+		} catch (Exception ignore) {
+			return 0;
+		}
+	}
+
+	public int getPerSlotMax() {
+		try {
+			org.bukkit.configuration.file.FileConfiguration cfg = com.axther.vexBags.VexBags.getInstance().getConfig();
+			String path = "tiers." + name().toLowerCase() + ".per_slot_max";
+			int def = 64;
+			int v = cfg.getInt(path, def);
+			return Math.max(1, v);
+		} catch (Exception ignore) {
+			return 64;
+		}
 	}
 
 	public BackpackTier next() {

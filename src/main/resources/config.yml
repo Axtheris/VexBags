@@ -1,17 +1,57 @@
 secret: ""
 
+chat:
+  prefix:
+    enabled: true
+    # Shown as a MiniMessage gradient matching the startup banner
+    text: "vexbags"
+    gradient_start: "#6b3fa0" # netherite
+    gradient_end: "#3de2ff"   # diamond
+    brackets: true
+    separator: " » "
+
 tiers:
   leather:
     slots: 9
+    per_slot_max: 64
+    display_name: "Leather"
+    hex_color: "#a87c5a"
+    material: "SHULKER_BOX"
+    custom_model_data: 0
   copper:
     slots: 18
+    per_slot_max: 64
+    display_name: "Copper"
+    hex_color: "#b87333"
+    material: "SHULKER_BOX"
+    custom_model_data: 0
   iron:
     slots: 27
+    per_slot_max: 64
+    display_name: "Iron"
+    hex_color: "#c7c7c7"
+    material: "SHULKER_BOX"
+    custom_model_data: 0
   gold:
     slots: 36
+    per_slot_max: 64
+    display_name: "Gold"
+    hex_color: "#ffd700"
+    material: "SHULKER_BOX"
+    custom_model_data: 0
   diamond:
     slots: 45
+    per_slot_max: 64
+    display_name: "Diamond"
+    hex_color: "#3de2ff"
+    material: "SHULKER_BOX"
+    custom_model_data: 0
   netherite:
     slots: 54
+    per_slot_max: 64
+    display_name: "Netherite"
+    hex_color: "#6b3fa0"
+    material: "SHULKER_BOX"
+    custom_model_data: 0
 
 

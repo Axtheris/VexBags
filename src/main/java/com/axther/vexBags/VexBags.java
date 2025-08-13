@@ -6,6 +6,7 @@ import com.axther.vexBags.storage.BackpackStorage;
 import com.axther.vexBags.tier.BackpackTier;
 import com.axther.vexBags.util.ItemUtil;
 import com.axther.vexBags.command.AdminBackpackCommand;
+import com.axther.vexBags.tier.TierRegistry;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
@@ -58,6 +59,7 @@ public final class VexBags extends JavaPlugin {
 
 		// Ensure data folder exists and load storage
 		BackpackStorage.get().init(this);
+		TierRegistry.load(this);
 
 		// Register commands
 		if (getCommand("vexbags") != null) {

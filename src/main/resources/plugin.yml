@@ -24,3 +24,15 @@ permissions:
   vexbags.admin:
     description: Admin access to list, open, delete, restore backpacks
     default: op
+  vexbags.admin.list:
+    description: Allows listing backpacks for a player
+    default: op
+  vexbags.admin.open:
+    description: Allows opening any backpack by UUID
+    default: op
+  vexbags.admin.delete:
+    description: Allows deleting any backpack by UUID
+    default: op
+  vexbags.admin.restore:
+    description: Allows restoring a backpack to a player
+    default: op

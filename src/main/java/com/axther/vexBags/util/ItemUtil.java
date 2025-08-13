@@ -18,6 +18,7 @@ import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.block.ShulkerBox;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +32,32 @@ public final class ItemUtil {
     private static final MiniMessage MM = MiniMessage.miniMessage();
     public static MiniMessage mm() { return MM; }
     public static final Component CLICK_HINT = noItalics(MM.deserialize("<gray>" + ItemUtil.toSmallCaps("withdraw: left 1 | right 8 | shift-left 16 | shift-right 32 | middle 64 | f all") + "</gray>"));
+
+    public static Component prefix() {
+        org.bukkit.configuration.file.FileConfiguration cfg = VexBags.getInstance().getConfig();
+        boolean enabled = cfg.getBoolean("chat.prefix.enabled", true);
+        String text = cfg.getString("chat.prefix.text", "vexbags");
+        String start = cfg.getString("chat.prefix.gradient_start", com.axther.vexBags.tier.BackpackTier.NETHERITE.getHexColor());
+        String end = cfg.getString("chat.prefix.gradient_end", com.axther.vexBags.tier.BackpackTier.DIAMOND.getHexColor());
+        boolean brackets = cfg.getBoolean("chat.prefix.brackets", true);
+        String separator = cfg.getString("chat.prefix.separator", " » ");
+        StringBuilder sb = new StringBuilder();
+        if (brackets) sb.append("<gray>[</gray>");
+        sb.append("<gradient:#").append(normalizeHex(start)).append(":#").append(normalizeHex(end)).append(">")
+                .append(toSmallCaps(text)).append("</gradient>");
+        if (brackets) sb.append("<gray>]</gray>");
+        sb.append("<dark_gray>").append(separator).append("</dark_gray>");
+        Component built = noItalics(MM.deserialize(sb.toString()));
+        return enabled ? built : Component.empty();
+    }
+
+    public static void sendPrefixed(CommandSender target, String miniMessage) {
+        target.sendMessage(prefix().append(noItalics(MM.deserialize(miniMessage))));
+    }
+
+    public static void sendPrefixed(CommandSender target, Component component) {
+        target.sendMessage(prefix().append(noItalics(component)));
+    }
 
 	public static boolean isBackpack(ItemStack item) {
 		if (item == null || item.getType() == Material.AIR) return false;
@@ -73,10 +100,12 @@ public final class ItemUtil {
 	}
 
 	public static ItemStack createNewBackpackItem(BackpackTier tier) {
-        ItemStack item = new ItemStack(Material.SHULKER_BOX);
+        ItemStack item = new ItemStack(tier.getBackpackMaterial());
         ItemMeta meta = item.getItemMeta();
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES);
         meta.displayName(noItalics(MM.deserialize("<color:#" + normalizeHex(tier.getHexColor()) + ">" + toSmallCaps(tier.getDisplayName() + " backpack") + "</color>")));
+        int cmd = tier.getCustomModelData();
+        if (cmd > 0) meta.setCustomModelData(cmd);
 		PersistentDataContainer pdc = meta.getPersistentDataContainer();
 		pdc.set(VexBags.getInstance().getKeyBackpackTier(), PersistentDataType.STRING, tier.name());
 		pdc.set(VexBags.getInstance().getKeyBackpackId(), PersistentDataType.STRING, UUID.randomUUID().toString());
@@ -160,9 +189,11 @@ public final class ItemUtil {
 	}
 
 	private static ItemStack createBackpackShell(BackpackTier tier) {
-        ItemStack shell = new ItemStack(Material.SHULKER_BOX);
+        ItemStack shell = new ItemStack(tier.getBackpackMaterial());
         ItemMeta meta = shell.getItemMeta();
         meta.displayName(noItalics(MM.deserialize("<color:#" + normalizeHex(tier.getHexColor()) + ">" + toSmallCaps(tier.getDisplayName() + " backpack") + "</color>")));
+        int cmd = tier.getCustomModelData();
+        if (cmd > 0) meta.setCustomModelData(cmd);
 		PersistentDataContainer pdc = meta.getPersistentDataContainer();
 		pdc.set(VexBags.getInstance().getKeyBackpackTier(), PersistentDataType.STRING, tier.name());
 		// Note: NO ID here, it will be assigned on craft

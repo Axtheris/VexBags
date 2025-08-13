@@ -18,11 +18,11 @@ public class AdminBackpackCommand implements CommandExecutor, org.bukkit.command
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("vexbags.admin")) {
-            sender.sendMessage("No permission.");
+            com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<red>No permission.</red>");
             return true;
         }
         if (args.length == 0) {
-            sender.sendMessage("Usage: /vexbagsadmin <list|open|delete|restore> [player|uuid]");
+            com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<gray>Usage:</gray> <white>/vexbagsadmin <list|open|delete|restore> [player|uuid]</white>");
             return true;
         }
 
@@ -30,13 +30,13 @@ public class AdminBackpackCommand implements CommandExecutor, org.bukkit.command
         switch (sub) {
             case "list":
                 if (args.length < 2) {
-                    sender.sendMessage("Usage: /vexbagsadmin list <player>");
+                    com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<gray>Usage:</gray> <white>/vexbagsadmin list <player></white>");
                     return true;
                 }
                 OfflinePlayer target = Bukkit.getOfflinePlayerIfCached(args[1]);
                 if (target == null) target = Bukkit.getOfflinePlayer(args[1]);
                 if (target == null || target.getUniqueId() == null) {
-                    sender.sendMessage("Player not found.");
+                    com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<red>Player not found.</red>");
                     return true;
                 }
                 UUID pid = target.getUniqueId();
@@ -48,65 +48,61 @@ public class AdminBackpackCommand implements CommandExecutor, org.bukkit.command
                         count++;
                     }
                 }
-                if (count == 0) sender.sendMessage("No backpacks for that player.");
+                if (count == 0) com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<gray>No backpacks for that player.</gray>");
                 return true;
 
             case "open":
                 if (!(sender instanceof Player admin)) {
-                    sender.sendMessage("Only players can open a backpack.");
+                    com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<red>Only players can open a backpack.</red>");
                     return true;
                 }
                 if (args.length < 2) {
-                    sender.sendMessage("Usage: /vexbagsadmin open <uuid>");
+                    com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<gray>Usage:</gray> <white>/vexbagsadmin open <uuid></white>");
                     return true;
                 }
                 try {
                     UUID id = UUID.fromString(args[1]);
                     BackpackData data = BackpackStorage.get().get(id);
-                    if (data == null) { sender.sendMessage("Backpack not found."); return true; }
+                    if (data == null) { com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<red>Backpack not found.</red>"); return true; }
                     BackpackGui gui = new BackpackGui(id, data.getTier());
                     gui.open(admin);
                 } catch (IllegalArgumentException ex) {
-                    sender.sendMessage("Invalid UUID.");
+                    com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<red>Invalid UUID.</red>");
                 }
                 return true;
 
             case "delete":
-                if (args.length < 2) { sender.sendMessage("Usage: /vexbagsadmin delete <uuid>"); return true; }
+                if (args.length < 2) { com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<gray>Usage:</gray> <white>/vexbagsadmin delete <uuid></white>"); return true; }
                 try {
                     UUID id = UUID.fromString(args[1]);
-                    Map<UUID, BackpackData> all = BackpackStorage.get().all();
-                    BackpackData removed = all.remove(id);
-                    if (removed == null) { sender.sendMessage("Backpack not found."); return true; }
-                    // Reflect removal in storage
-                    BackpackStorage.get().all().remove(id);
-                    sender.sendMessage("Backpack deleted: " + id);
-                    BackpackStorage.get().scheduleSave();
-                } catch (IllegalArgumentException ex) { sender.sendMessage("Invalid UUID."); }
+                    boolean ok = BackpackStorage.get().deleteBackpack(id);
+                    if (!ok) { com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<red>Backpack not found.</red>"); return true; }
+                    com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<gray>Backpack deleted:</gray> <white>" + id + "</white>");
+                } catch (IllegalArgumentException ex) { com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<red>Invalid UUID.</red>"); }
                 return true;
 
             case "restore":
                 if (args.length < 3) {
-                    sender.sendMessage("Usage: /vexbagsadmin restore <uuid> <player>");
+                    com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<gray>Usage:</gray> <white>/vexbagsadmin restore <uuid> <player></white>");
                     return true;
                 }
                 try {
                     UUID id = UUID.fromString(args[1]);
                     Player targetPlayer = Bukkit.getPlayer(args[2]);
-                    if (targetPlayer == null) { sender.sendMessage("Player not online."); return true; }
+                    if (targetPlayer == null) { com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<red>Player not online.</red>"); return true; }
                     BackpackData data = BackpackStorage.get().get(id);
-                    if (data == null) { sender.sendMessage("Backpack not found."); return true; }
+                    if (data == null) { com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<red>Backpack not found.</red>"); return true; }
                     // Give a new item pointing to the same backpack id
                     var item = com.axther.vexBags.util.ItemUtil.createNewBackpackItem(data.getTier());
                     com.axther.vexBags.util.ItemUtil.setBackpackId(item, id);
                     BackpackStorage.get().setOwner(id, targetPlayer.getUniqueId());
                     targetPlayer.getInventory().addItem(item);
-                    sender.sendMessage("Restored backpack to " + targetPlayer.getName());
-                } catch (IllegalArgumentException ex) { sender.sendMessage("Invalid UUID."); }
+                    com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<gray>Restored backpack to</gray> <white>" + targetPlayer.getName() + "</white>");
+                } catch (IllegalArgumentException ex) { com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<red>Invalid UUID.</red>"); }
                 return true;
         }
 
-        sender.sendMessage("Unknown subcommand.");
+        com.axther.vexBags.util.ItemUtil.sendPrefixed(sender, "<gray>Unknown subcommand.</gray>");
         return true;
     }
 

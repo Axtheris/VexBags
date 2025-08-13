@@ -390,9 +390,15 @@ public final class ItemUtil {
         String id = pdc.get(VexBags.getInstance().getKeyBackpackId(), PersistentDataType.STRING);
         if (id == null) return;
         Integer ver = pdc.get(VexBags.getInstance().getKeyBackpackVersion(), PersistentDataType.INTEGER);
-        if (ver == null) ver = 1;
+        if (ver == null) {
+            ver = 1;
+            pdc.set(VexBags.getInstance().getKeyBackpackVersion(), PersistentDataType.INTEGER, ver);
+        }
         String sess = pdc.get(VexBags.getInstance().getKeyBackpackSession(), PersistentDataType.STRING);
-        if (sess == null) sess = java.util.UUID.randomUUID().toString();
+        if (sess == null) {
+            sess = java.util.UUID.randomUUID().toString();
+            pdc.set(VexBags.getInstance().getKeyBackpackSession(), PersistentDataType.STRING, sess);
+        }
         String secret = VexBags.getInstance().getServerSecret();
         String payload = id + ":" + ver + ":" + sess + ":" + secret;
         String sig = Integer.toHexString(payload.hashCode());
@@ -413,6 +419,34 @@ public final class ItemUtil {
         String payload = id + ":" + ver + ":" + sess + ":" + secret;
         String expected = Integer.toHexString(payload.hashCode());
         return expected.equals(sig);
+    }
+
+    /**
+     * Attempt to re-sign a backpack item if its ID exists in storage. This is a safe
+     * recovery path for legacy items or after a secret rotation. Only succeeds when
+     * the item is recognized as our backpack and the ID is present in persistent storage.
+     */
+    public static boolean reSignIfOwned(ItemStack item) {
+        if (!isBackpack(item)) return false;
+        java.util.UUID id = getBackpackId(item);
+        if (id == null) return false;
+        com.axther.vexBags.storage.BackpackData data = com.axther.vexBags.storage.BackpackStorage.get().get(id);
+        if (data == null) return false;
+        // Ensure required fields exist, refresh session for safety, and sign
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return false;
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        Integer ver = pdc.get(VexBags.getInstance().getKeyBackpackVersion(), PersistentDataType.INTEGER);
+        if (ver == null || ver <= 0) {
+            ver = 1;
+            pdc.set(VexBags.getInstance().getKeyBackpackVersion(), PersistentDataType.INTEGER, ver);
+        }
+        // Always rotate session on recovery
+        String newSess = java.util.UUID.randomUUID().toString();
+        pdc.set(VexBags.getInstance().getKeyBackpackSession(), PersistentDataType.STRING, newSess);
+        item.setItemMeta(meta);
+        signBackpack(item);
+        return verifyBackpackSignature(item);
     }
 
     // removed duplicate overload

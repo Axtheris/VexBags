@@ -122,17 +122,39 @@ public class BackpackListeners implements Listener {
 			event.setCancelled(true);
 			return;
 		}
-		// Verify signature before allowing interaction
-        if (!ItemUtil.verifyBackpackSignature(item)) {
-            event.setCancelled(true);
-            try {
-                if (com.axther.vexBags.VexBags.getInstance().getConfig().getBoolean("messages.enabled", true)) {
-                    String msg = com.axther.vexBags.VexBags.getInstance().getConfig().getString("messages.signature_invalid", "<red>This backpack failed verification.</red>");
-                    com.axther.vexBags.util.ItemUtil.sendPrefixed(event.getPlayer(), com.axther.vexBags.util.ItemUtil.mm().deserialize(msg));
-                }
-            } catch (Throwable ignored) {}
-            return;
-        }
+		// Verify signature before allowing interaction, attempt self-heal for legacy items missing fields
+		boolean valid = ItemUtil.verifyBackpackSignature(item);
+		if (!valid) {
+			try {
+				var meta = item.getItemMeta();
+				var pdc = meta != null ? meta.getPersistentDataContainer() : null;
+				String idStr = pdc == null ? null : pdc.get(com.axther.vexBags.VexBags.getInstance().getKeyBackpackId(), org.bukkit.persistence.PersistentDataType.STRING);
+				String sig = pdc == null ? null : pdc.get(com.axther.vexBags.VexBags.getInstance().getKeyBackpackSig(), org.bukkit.persistence.PersistentDataType.STRING);
+				Integer ver = pdc == null ? null : pdc.get(com.axther.vexBags.VexBags.getInstance().getKeyBackpackVersion(), org.bukkit.persistence.PersistentDataType.INTEGER);
+				String sess = pdc == null ? null : pdc.get(com.axther.vexBags.VexBags.getInstance().getKeyBackpackSession(), org.bukkit.persistence.PersistentDataType.STRING);
+				if (idStr != null && (sig == null || ver == null || sess == null)) {
+					// Legacy item: fill missing fields and re-sign
+					com.axther.vexBags.util.ItemUtil.signBackpack(item);
+					valid = ItemUtil.verifyBackpackSignature(item);
+				}
+				// If still not valid, attempt recovery when the ID exists in storage (vanilla transfer/secret rotation)
+				if (!valid) {
+					if (com.axther.vexBags.util.ItemUtil.reSignIfOwned(item)) {
+						valid = true;
+					}
+				}
+			} catch (Throwable ignored) {}
+		}
+		if (!valid) {
+			event.setCancelled(true);
+			try {
+				if (com.axther.vexBags.VexBags.getInstance().getConfig().getBoolean("messages.enabled", true)) {
+					String msg = com.axther.vexBags.VexBags.getInstance().getConfig().getString("messages.signature_invalid", "<red>This backpack failed verification.</red>");
+					com.axther.vexBags.util.ItemUtil.sendPrefixed(event.getPlayer(), com.axther.vexBags.util.ItemUtil.mm().deserialize(msg));
+				}
+			} catch (Throwable ignored) {}
+			return;
+		}
 		event.setCancelled(true);
 		UUID id = ItemUtil.getBackpackId(item);
 		BackpackTier tier = ItemUtil.getTier(item);

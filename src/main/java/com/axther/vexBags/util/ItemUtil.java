@@ -32,7 +32,7 @@ public final class ItemUtil {
     // Cache MiniMessage instance and static components to reduce allocations
     private static final MiniMessage MM = MiniMessage.miniMessage();
     public static MiniMessage mm() { return MM; }
-    public static final Component CLICK_HINT = noItalics(MM.deserialize("<gray>left-click: take 64 | right-click: take 1</gray>"));
+    public static final Component CLICK_HINT = noItalics(MM.deserialize("<gray>" + ItemUtil.toSmallCaps("left: 1  right: 8  shift-left: 16  shift-right: 32  middle: 64  f: all") + "</gray>"));
 
 	public static boolean isBackpack(ItemStack item) {
 		if (item == null || item.getType() == Material.AIR) return false;
@@ -280,13 +280,15 @@ public final class ItemUtil {
         box.getInventory().clear();
         // Fill preview inventory with stacks representing totals
         int slot = 0;
-        for (Map.Entry<Material, Integer> e : data.getItemCounts().entrySet()) {
-            int remaining = e.getValue();
+        for (var e : data.getEntries().entrySet()) {
+            var stored = e.getValue();
+            int remaining = stored.getAmount();
             while (remaining > 0 && slot < box.getInventory().getSize()) {
-                int max = Math.max(1, e.getKey().getMaxStackSize());
+                ItemStack template = stored.getTemplate();
+                int max = Math.max(1, template.getMaxStackSize());
                 int give = Math.min(max, remaining);
-                // Preserve meta: create a base stack and keep meta slots as is (preview only)
-                ItemStack display = new ItemStack(e.getKey(), give);
+                ItemStack display = template.clone();
+                display.setAmount(give);
                 box.getInventory().setItem(slot++, display);
                 remaining -= give;
             }
@@ -294,6 +296,53 @@ public final class ItemUtil {
         }
         bsm.setBlockState(box);
         backpack.setItemMeta(bsm);
+    }
+
+    public static String stackKey(ItemStack stack) {
+        if (stack == null) return "null";
+        ItemStack one = stack.clone();
+        one.setAmount(1);
+        java.util.Map<String,Object> serial = one.serialize();
+        String canonical = canonicalString(serial);
+        return one.getType().name() + "|" + sha256(canonical);
+    }
+
+    private static String canonicalString(Object o) {
+        if (o == null) return "null";
+        if (o instanceof java.util.Map<?,?> map) {
+            java.util.TreeMap<String,String> sorted = new java.util.TreeMap<>();
+            for (var e : map.entrySet()) {
+                sorted.put(String.valueOf(e.getKey()), canonicalString(e.getValue()));
+            }
+            StringBuilder sb = new StringBuilder("{");
+            boolean first = true;
+            for (var e : sorted.entrySet()) {
+                if (!first) sb.append(','); first = false;
+                sb.append(e.getKey()).append(':').append(e.getValue());
+            }
+            return sb.append('}').toString();
+        }
+        if (o instanceof java.util.List<?> list) {
+            StringBuilder sb = new StringBuilder("[");
+            for (int i=0;i<list.size();i++) {
+                if (i>0) sb.append(',');
+                sb.append(canonicalString(list.get(i)));
+            }
+            return sb.append(']').toString();
+        }
+        return String.valueOf(o);
+    }
+
+    private static String sha256(String s) {
+        try {
+            var md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(s.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (Exception e) {
+            return Integer.toHexString(s.hashCode());
+        }
     }
 
     // Dupe protection: sign with secret + id + version + session

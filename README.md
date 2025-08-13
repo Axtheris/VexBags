@@ -176,7 +176,7 @@ tiers:
 ## API and internals (for developers)
 
 - Main plugin: `com.axther.vexBags.VexBags`
-- Keys: `backpack_id`, `backpack_tier`, `backpack_ver`, `backpack_sess`, `backpack_sig`
+ - Keys: `backpack_id`, `backpack_tier`, `backpack_ver`, `backpack_sess`, `backpack_sig`, `entry_index`
 - Storage model: JSON of per-backpack entries keyed by `stackKey` (canonical serialized stack + SHA-256) with counts; includes owner index
 - UI: dynamic inventory sized to tier capacity; GUI shows top items and both unique-type and capacity progress bars
 

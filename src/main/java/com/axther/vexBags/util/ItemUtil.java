@@ -30,7 +30,7 @@ public final class ItemUtil {
     // Cache MiniMessage instance and static components to reduce allocations
     private static final MiniMessage MM = MiniMessage.miniMessage();
     public static MiniMessage mm() { return MM; }
-    public static final Component CLICK_HINT = noItalics(MM.deserialize("<gray>" + ItemUtil.toSmallCaps("left: 1  right: 8  shift-left: 16  shift-right: 32  middle: 64  f: all") + "</gray>"));
+    public static final Component CLICK_HINT = noItalics(MM.deserialize("<gray>" + ItemUtil.toSmallCaps("withdraw: left 1 | right 8 | shift-left 16 | shift-right 32 | middle 64 | f all") + "</gray>"));
 
 	public static boolean isBackpack(ItemStack item) {
 		if (item == null || item.getType() == Material.AIR) return false;
@@ -114,13 +114,14 @@ public final class ItemUtil {
             unique = data.getEntries().size();
             total = data.totalItems();
         }
-        // Capacity and percentage
+        // Capacity and percentage (visuals)
         int maxCapacity = tier.getStorageSlots() * 64; // configurable later via config
         int percentFull = maxCapacity == 0 ? 0 : Math.min(100, (int)Math.round((total * 100.0) / maxCapacity));
         int percentMax = 100;
         String bar = buildProgressBar(unique, tier.getStorageSlots(), 10, hex);
-        lore.add(noItalics(MM.deserialize("<dark_gray>•</dark_gray> <gray>" + ItemUtil.toSmallCaps("storage:") + "</gray> <white>" + unique + "/" + tier.getStorageSlots() + "</white>  " + bar)));
+        lore.add(noItalics(MM.deserialize("<dark_gray>•</dark_gray> <gray>" + ItemUtil.toSmallCaps("storage slots:") + "</gray> <white>" + unique + "/" + tier.getStorageSlots() + "</white>  " + bar)));
         lore.add(noItalics(MM.deserialize("<dark_gray>•</dark_gray> <gray>" + ItemUtil.toSmallCaps("capacity:") + "</gray> <white>" + total + "/" + maxCapacity + "</white> <dark_gray>(</dark_gray><gray>" + percentFull + "</gray><white>/</white><gray>" + percentMax + "</gray><dark_gray>)</dark_gray>")));
+        lore.add(noItalics(MM.deserialize("<gray>" + ItemUtil.toSmallCaps("deposit keys:") + "</gray> <white>" + ItemUtil.toSmallCaps("shift-click to quick-move, f = deposit all, pick up + double-click = store all") + "</white>")));
 		// Spacer
         lore.add(noItalics(Component.text(" ")));
         // Top items by count

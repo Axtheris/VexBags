@@ -50,6 +50,7 @@ public class BackpackStorage {
 	public synchronized BackpackData get(UUID id) { return idToData.get(id); }
 
     public synchronized void saveNow() {
+        if (dataFile == null) return; // not initialized
         FileConfiguration snapshot = new YamlConfiguration();
         ConfigurationSection root = snapshot.createSection("backpacks");
         for (BackpackData data : idToData.values()) {
@@ -68,17 +69,18 @@ public class BackpackStorage {
             snapshot.save(dataFile);
             this.config = snapshot;
             // Build and save owner index
-            FileConfiguration idx = new YamlConfiguration();
-            ConfigurationSection owners = idx.createSection("owners");
-            for (BackpackData data : idToData.values()) {
-                if (data.getOwnerId() == null) continue;
-                String key = data.getOwnerId().toString();
-                ConfigurationSection list = owners.getConfigurationSection(key);
-                if (list == null) list = owners.createSection(key);
-                list.set(data.getId().toString(), data.getTier().name());
+            if (indexFile != null) {
+                FileConfiguration idx = new YamlConfiguration();
+                ConfigurationSection owners = idx.createSection("owners");
+                for (BackpackData data : idToData.values()) {
+                    if (data.getOwnerId() == null) continue;
+                    String key = data.getOwnerId().toString();
+                    ConfigurationSection list = owners.getConfigurationSection(key);
+                    if (list == null) list = owners.createSection(key);
+                    list.set(data.getId().toString(), data.getTier().name());
+                }
+                idx.save(indexFile);
             }
-            idx.save(indexFile);
-            // this.indexConfig = idx;
         } catch (IOException e) {
             Bukkit.getLogger().severe("[VexBags] Failed to save backpacks.yml: " + e.getMessage());
         }

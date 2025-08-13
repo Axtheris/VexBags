@@ -1,0 +1,17 @@
+secret: ""
+
+tiers:
+  leather:
+    slots: 9
+  copper:
+    slots: 18
+  iron:
+    slots: 27
+  gold:
+    slots: 36
+  diamond:
+    slots: 45
+  netherite:
+    slots: 54
+
+

@@ -6,7 +6,6 @@ import com.axther.vexBags.tier.BackpackTier;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -14,7 +13,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public class BackpackGui {
@@ -50,7 +48,7 @@ public class BackpackGui {
             ItemStack display = st.getTemplate().clone();
             ItemMeta meta = display.getItemMeta();
             List<Component> lore = new ArrayList<>();
-            lore.add(com.axther.vexBags.util.ItemUtil.mm().deserialize("<white>total: " + st.getAmount() + "</white>").decoration(TextDecoration.ITALIC, false));
+            lore.add(com.axther.vexBags.util.ItemUtil.mm().deserialize("<gray>" + com.axther.vexBags.util.ItemUtil.toSmallCaps("total:") + "</gray> <white>" + st.getAmount() + "</white>").decoration(TextDecoration.ITALIC, false));
             lore.add(com.axther.vexBags.util.ItemUtil.CLICK_HINT);
             meta.lore(lore);
             display.setItemMeta(meta);

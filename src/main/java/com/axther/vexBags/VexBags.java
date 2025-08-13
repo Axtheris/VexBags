@@ -11,6 +11,9 @@ import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.plugin.java.JavaPlugin;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import java.util.Iterator;
 
@@ -74,6 +77,9 @@ public final class VexBags extends JavaPlugin {
 
 		// Register crafting recipes for each tier
 		registerBackpackRecipes();
+
+		// Fancy startup banner
+		logStartupBanner();
 	}
 
 	@Override
@@ -117,5 +123,22 @@ public final class VexBags extends JavaPlugin {
 		for (BackpackTier tier : BackpackTier.values()) {
 			ItemUtil.registerRecipeForTier(this, tier);
 		}
+	}
+
+	private void logStartupBanner() {
+		MiniMessage mm = MiniMessage.miniMessage();
+		String version = getDescription().getVersion();
+		int tierCount = BackpackTier.values().length;
+		String title = "<gradient:#6b3fa0:#3de2ff>" + ItemUtil.toSmallCaps("vexbags") + "</gradient>";
+		String line = "<gray>" + ItemUtil.toSmallCaps("───────") + "</gray>";
+		Component banner = mm.deserialize(line).decoration(TextDecoration.ITALIC, false);
+		Component name = mm.deserialize(title).decoration(TextDecoration.ITALIC, false);
+		Component info1 = mm.deserialize("<gray>" + ItemUtil.toSmallCaps("version:") + "</gray> <white>" + version + "</white>").decoration(TextDecoration.ITALIC, false);
+		Component info2 = mm.deserialize("<gray>" + ItemUtil.toSmallCaps("tiers:") + "</gray> <white>" + tierCount + "</white>").decoration(TextDecoration.ITALIC, false);
+		Bukkit.getConsoleSender().sendMessage(banner);
+		Bukkit.getConsoleSender().sendMessage(name);
+		Bukkit.getConsoleSender().sendMessage(info1);
+		Bukkit.getConsoleSender().sendMessage(info2);
+		Bukkit.getConsoleSender().sendMessage(banner);
 	}
 }

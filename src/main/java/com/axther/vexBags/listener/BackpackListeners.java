@@ -12,6 +12,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -154,36 +155,79 @@ public class BackpackListeners implements Listener {
 			return;
 		}
 
-		// Deposit from player inventory side with rich controls
+        // Deposit from player inventory side with rich controls (shift-click, F=deposit all, double-click store all)
 		ItemStack moving = event.getCurrentItem();
 		if (event.getClickedInventory() != player.getInventory()) return;
 		if (moving == null || moving.getType() == Material.AIR) return;
 		if (ItemUtil.isBackpack(moving)) return;
 
 		BackpackTier tier = data.getTier();
-		String mKey = com.axther.vexBags.util.ItemUtil.stackKey(moving);
-		int amountToDeposit = 0;
-		switch (event.getClick()) {
-			case LEFT -> amountToDeposit = 1;
-			case RIGHT -> amountToDeposit = Math.min(8, moving.getAmount());
-			case SHIFT_LEFT -> amountToDeposit = Math.min(16, moving.getAmount());
-			case SHIFT_RIGHT -> amountToDeposit = Math.min(32, moving.getAmount());
-			case MIDDLE -> amountToDeposit = Math.min(64, moving.getAmount());
-			case SWAP_OFFHAND -> amountToDeposit = moving.getAmount(); // F deposits all of that stack
-			default -> amountToDeposit = 0;
-		}
+        String mKey = com.axther.vexBags.util.ItemUtil.stackKey(moving);
+        ClickType click = event.getClick();
 
-		if (amountToDeposit <= 0) return;
-		boolean isNewType = data.getEntries().get(mKey) == null;
-		if (isNewType && data.totalItemTypes() >= tier.getStorageSlots()) {
-			player.sendMessage(net.kyori.adventure.text.Component.text("Backpack is out of storage slots for new item types.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
-			return;
-		}
-
-		int transferred = Math.min(amountToDeposit, moving.getAmount());
-		data.add(moving, mKey, transferred);
-        moving.setAmount(moving.getAmount() - transferred);
-		BackpackStorage.get().scheduleSave();
+        if (click == ClickType.SWAP_OFFHAND) {
+            // F: deposit all of that type (sweep entire inventory for same key)
+            int total = 0;
+            for (int i = 0; i < player.getInventory().getSize(); i++) {
+                ItemStack it = player.getInventory().getItem(i);
+                if (it == null || it.getType() == Material.AIR) continue;
+                if (ItemUtil.isBackpack(it)) continue;
+                if (!com.axther.vexBags.util.ItemUtil.stackKey(it).equals(mKey)) continue;
+                int add = it.getAmount();
+                boolean isNewType = data.getEntries().get(mKey) == null;
+                if (isNewType && data.totalItemTypes() >= tier.getStorageSlots()) {
+                    player.sendMessage(net.kyori.adventure.text.Component.text("Backpack is out of storage slots for new item types.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
+                    break;
+                }
+                data.add(it, mKey, add);
+                total += add;
+                player.getInventory().setItem(i, null);
+            }
+            if (total > 0) {
+                BackpackStorage.get().scheduleSave();
+            }
+        } else if (click == ClickType.DOUBLE_CLICK) {
+            // Pick up + double-click: store all of same type from inventory
+            ItemStack basis = event.getCursor();
+            if (basis == null || basis.getType() == Material.AIR) basis = moving;
+            if (basis == null || basis.getType() == Material.AIR) return;
+            String key = com.axther.vexBags.util.ItemUtil.stackKey(basis);
+            int total = 0;
+            for (int i = 0; i < player.getInventory().getSize(); i++) {
+                ItemStack it = player.getInventory().getItem(i);
+                if (it == null || it.getType() == Material.AIR) continue;
+                if (ItemUtil.isBackpack(it)) continue;
+                if (!com.axther.vexBags.util.ItemUtil.stackKey(it).equals(key)) continue;
+                int add = it.getAmount();
+                boolean isNewType = data.getEntries().get(key) == null;
+                if (isNewType && data.totalItemTypes() >= tier.getStorageSlots()) {
+                    player.sendMessage(net.kyori.adventure.text.Component.text("Backpack is out of storage slots for new item types.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
+                    break;
+                }
+                data.add(it, key, add);
+                total += add;
+                player.getInventory().setItem(i, null);
+            }
+            // Clear cursor as if collected (compatible approach)
+            player.setItemOnCursor(null);
+            if (total > 0) {
+                BackpackStorage.get().scheduleSave();
+            }
+        } else if (click == ClickType.SHIFT_LEFT || click == ClickType.SHIFT_RIGHT) {
+            // Quick-move like chest: deposit the whole stack
+            int amount = moving.getAmount();
+            boolean isNewType = data.getEntries().get(mKey) == null;
+            if (isNewType && data.totalItemTypes() >= tier.getStorageSlots()) {
+                player.sendMessage(net.kyori.adventure.text.Component.text("Backpack is out of storage slots for new item types.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
+                return;
+            }
+            data.add(moving, mKey, amount);
+            moving.setAmount(0);
+            BackpackStorage.get().scheduleSave();
+        } else {
+            // Ignore plain left/right in player inventory (no custom deposit)
+            return;
+        }
 
 		// Update backpack item visuals
 		ItemStack hand = player.getInventory().getItemInMainHand();

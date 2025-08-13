@@ -28,10 +28,7 @@ public class BackpackGui {
 
 	public void open(Player player) {
 		var mgr = com.axther.vexBags.VexBags.getInstance().getIntegrations();
-		if (mgr != null && !mgr.isMasterEnabled()) {
-			// continue
-		} else if (mgr != null && !mgr.isAllowedToOpen(player, player.getLocation())) {
-			com.axther.vexBags.util.ItemUtil.sendPrefixed(player, net.kyori.adventure.text.Component.text("You cannot open your backpack here.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
+		if (mgr != null && mgr.isMasterEnabled() && !mgr.isAllowedToOpen(player, player.getLocation())) {
 			return;
 		}
 		int size = Math.max(9, Math.min(54, ((tier.getStorageSlots() + 8) / 9) * 9));

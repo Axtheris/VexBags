@@ -173,6 +173,26 @@ tiers:
     custom_model_data: 0
 ```
 
+### Integrations and messages
+
+All integrations are optional and gated by `integrations.enabled` and per-integration `enabled` toggles. If the target plugin is not present or the toggle is off, behavior is unchanged.
+
+Messages live under `messages:` and can be disabled via `messages.enabled: false`. Keys:
+
+- `messages.open_denied.generic`
+- `messages.open_denied.combatlogx`
+- `messages.open_denied.worldguard`
+- `messages.open_denied.towny`
+- `messages.open_denied.griefprevention`
+- `messages.combatlogx.closed_on_tag`
+- `messages.vault.upgrade_charged` (placeholders: `%amount%`, `%tier%`)
+- `messages.vault.upgrade_insufficient` (placeholders: `%amount%`, `%tier%`)
+- `messages.vault.admin_restore_charged` (placeholders: `%amount%`)
+- `messages.vault.admin_restore_insufficient` (placeholders: `%amount%`)
+- `messages.signature_invalid`
+
+MiniMessage formatting is supported for all message strings.
+
 ## API and internals (for developers)
 
 - Main plugin: `com.axther.vexBags.VexBags`

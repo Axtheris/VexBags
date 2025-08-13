@@ -27,6 +27,10 @@ public class VexBagsExpansion extends me.clip.placeholderapi.expansion.Placehold
         UUID pid = offlinePlayer.getUniqueId();
         if (pid == null) return "";
 
+        if (!com.axther.vexBags.VexBags.getInstance().getConfig().getBoolean("integrations.placeholderapi.enabled", true)) {
+            return "";
+        }
+
         if (params.equalsIgnoreCase("tier")) {
             if (player != null) {
                 var hand = player.getInventory().getItemInMainHand();

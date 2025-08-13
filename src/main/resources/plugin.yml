@@ -1,0 +1,7 @@
+name: VexBags
+version: '1.0'
+main: com.axther.vexBags.VexBags
+api-version: '1.21'
+load: STARTUP
+authors: [ 7vexes, Axther ]
+description: Just another backpack plugin.

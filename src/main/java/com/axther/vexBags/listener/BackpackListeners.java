@@ -9,7 +9,6 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -124,8 +123,8 @@ public class BackpackListeners implements Listener {
 		if (clickedTop) {
 			ItemStack clicked = event.getCurrentItem();
 			if (clicked == null || clicked.getType() == Material.AIR) return;
-			Material material = clicked.getType();
-			int available = data.getCount(material);
+			String key = com.axther.vexBags.util.ItemUtil.stackKey(clicked);
+			int available = data.getCountByKey(key);
 			if (available <= 0) return;
 
 			int desired = 0;
@@ -135,44 +134,14 @@ public class BackpackListeners implements Listener {
 				case SHIFT_LEFT -> desired = Math.min(16, available);
 				case SHIFT_RIGHT -> desired = Math.min(32, available);
 				case MIDDLE -> desired = Math.min(64, available);
-				case SWAP_OFFHAND -> {
-					if (event.isShiftClick()) {
-						desired = available; // Shift+F withdraw all available
-					} else {
-						int capacity = computeCapacityFor(player, material);
-						desired = Math.min(available, Math.max(0, capacity)); // F fill all available space
-					}
-				}
+				case SWAP_OFFHAND -> desired = available; // F on inside: withdraw all
 				default -> desired = 0;
 			}
 
 			if (desired <= 0) return;
-			int removed = data.remove(material, desired);
-			if (removed > 0) {
-				if (event.getClick() == ClickType.SWAP_OFFHAND) {
-					// Put as much as possible in offhand, remainder to inventory
-					ItemStack off = player.getInventory().getItemInOffHand();
-					int max = Math.max(1, material.getMaxStackSize());
-					if (off == null || off.getType() == Material.AIR) {
-						int put = Math.min(removed, max);
-						player.getInventory().setItemInOffHand(new ItemStack(material, put));
-						int leftover = removed - put;
-						if (leftover > 0) giveToPlayer(player, material, leftover);
-					} else if (off.getType() == material) {
-						int space = Math.max(0, max - off.getAmount());
-						int put = Math.min(space, removed);
-						off.setAmount(off.getAmount() + put);
-						int leftover = removed - put;
-						if (leftover > 0) giveToPlayer(player, material, leftover);
-					} else {
-						// Offhand busy with another item; give to inventory
-						giveToPlayer(player, material, removed);
-					}
-				} else {
-					giveToPlayer(player, material, removed);
-				}
-				BackpackStorage.get().scheduleSave();
-			}
+			int removed = data.removeByKey(key, desired);
+			if (removed > 0) giveToPlayer(player, clicked.getType(), removed);
+			BackpackStorage.get().scheduleSave();
 
 			// Update backpack item in hand if present
 			ItemStack hand = player.getInventory().getItemInMainHand();
@@ -192,37 +161,27 @@ public class BackpackListeners implements Listener {
 		if (ItemUtil.isBackpack(moving)) return;
 
 		BackpackTier tier = data.getTier();
-		Material mat = moving.getType();
+		String mKey = com.axther.vexBags.util.ItemUtil.stackKey(moving);
 		int amountToDeposit = 0;
 		switch (event.getClick()) {
 			case LEFT -> amountToDeposit = 1;
-			case RIGHT -> amountToDeposit = Math.min(64, moving.getAmount());
-			case SHIFT_LEFT -> amountToDeposit = moving.getAmount();
-			case SHIFT_RIGHT -> amountToDeposit = (moving.getAmount() + 1) / 2;
-			case MIDDLE -> amountToDeposit = Math.min(32, moving.getAmount());
-			case SWAP_OFFHAND -> {
-				ItemStack off = player.getInventory().getItemInOffHand();
-				if (off == null || off.getType() == Material.AIR) return;
-				mat = off.getType();
-				moving = off;
-				amountToDeposit = off.getAmount();
-				if (event.isShiftClick()) {
-					// Also sweep same-type items across inventory
-					amountToDeposit = sweepSameTypeFromInventory(player, mat) + amountToDeposit;
-				}
-			}
+			case RIGHT -> amountToDeposit = Math.min(8, moving.getAmount());
+			case SHIFT_LEFT -> amountToDeposit = Math.min(16, moving.getAmount());
+			case SHIFT_RIGHT -> amountToDeposit = Math.min(32, moving.getAmount());
+			case MIDDLE -> amountToDeposit = Math.min(64, moving.getAmount());
+			case SWAP_OFFHAND -> amountToDeposit = moving.getAmount(); // F deposits all of that stack
 			default -> amountToDeposit = 0;
 		}
 
 		if (amountToDeposit <= 0) return;
-		boolean isNewType = !data.getItemCounts().containsKey(mat);
+		boolean isNewType = data.getEntries().get(mKey) == null;
 		if (isNewType && data.totalItemTypes() >= tier.getStorageSlots()) {
 			player.sendMessage(net.kyori.adventure.text.Component.text("Backpack is out of storage slots for new item types.").color(net.kyori.adventure.text.format.NamedTextColor.RED));
 			return;
 		}
 
-        int transferred = Math.min(amountToDeposit, moving.getAmount());
-        data.add(mat, transferred);
+		int transferred = Math.min(amountToDeposit, moving.getAmount());
+		data.add(moving, mKey, transferred);
         moving.setAmount(moving.getAmount() - transferred);
 		BackpackStorage.get().scheduleSave();
 
@@ -248,29 +207,33 @@ public class BackpackListeners implements Listener {
 	@EventHandler
 	public void onJoin(PlayerJoinEvent event) {
 		// Unlock all backpack recipes
-		for (var tier : com.axther.vexBags.tier.BackpackTier.values()) {
-			NamespacedKey key = com.axther.vexBags.util.ItemUtil.recipeKey(com.axther.vexBags.VexBags.getInstance(), tier);
-			event.getPlayer().discoverRecipe(key);
-		}
+        // Rediscover recipes with our namespace
+        java.util.List<NamespacedKey> keys = new java.util.ArrayList<>();
+        for (var tier : com.axther.vexBags.tier.BackpackTier.values()) {
+            keys.add(com.axther.vexBags.util.ItemUtil.recipeKey(com.axther.vexBags.VexBags.getInstance(), tier));
+        }
+        event.getPlayer().discoverRecipes(keys);
 	}
 
 	private void refreshTopInventory(Inventory inventory, UUID backpackId, BackpackTier tier) {
 		BackpackData data = BackpackStorage.get().get(backpackId);
 		if (data == null) return;
 		inventory.clear();
-		int slot = 0;
-        for (var e : data.getItemCounts().entrySet()) {
-			if (slot >= tier.getStorageSlots()) break;
-			ItemStack display = new ItemStack(e.getKey());
-			ItemMeta meta = display.getItemMeta();
-			java.util.List<Component> lore = new java.util.ArrayList<>();
-			lore.add(com.axther.vexBags.util.ItemUtil.mm().deserialize("<white>total: " + e.getValue() + "</white>"));
-			lore.add(com.axther.vexBags.util.ItemUtil.CLICK_HINT);
-			meta.lore(lore);
-			display.setItemMeta(meta);
-			display.setAmount(Math.min(e.getValue(), display.getMaxStackSize()));
-			inventory.setItem(slot++, display);
-		}
+        int slot = 0;
+        var sorted = new java.util.ArrayList<>(data.getEntries().values());
+        sorted.sort((a,b) -> Integer.compare(b.getAmount(), a.getAmount()));
+        for (var st : sorted) {
+            if (slot >= tier.getStorageSlots()) break;
+            ItemStack display = st.getTemplate().clone();
+            ItemMeta meta = display.getItemMeta();
+            java.util.List<Component> lore = new java.util.ArrayList<>();
+            lore.add(com.axther.vexBags.util.ItemUtil.mm().deserialize("<white>total: " + st.getAmount() + "</white>"));
+            lore.add(com.axther.vexBags.util.ItemUtil.CLICK_HINT);
+            meta.lore(lore);
+            display.setItemMeta(meta);
+            display.setAmount(Math.min(st.getAmount(), display.getMaxStackSize()));
+            inventory.setItem(slot++, display);
+        }
 	}
 
 	private void giveToPlayer(Player player, Material material, int amount) {
@@ -284,7 +247,8 @@ public class BackpackListeners implements Listener {
 		}
 	}
 
-	private int sweepSameTypeFromInventory(Player player, Material material) {
+    @SuppressWarnings("unused")
+    private int sweepSameTypeFromInventory(Player player, Material material) {
 		int total = 0;
 		for (int i = 0; i < player.getInventory().getSize(); i++) {
 			ItemStack it = player.getInventory().getItem(i);
@@ -297,6 +261,7 @@ public class BackpackListeners implements Listener {
 		return total;
 	}
 
+    @SuppressWarnings("unused")
     private int computeCapacityFor(Player player, Material material) {
         int max = Math.max(1, material.getMaxStackSize());
         int space = 0;

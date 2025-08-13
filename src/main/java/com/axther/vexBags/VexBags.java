@@ -44,6 +44,15 @@ public final class VexBags extends JavaPlugin {
 			saveConfig();
 		}
 
+		// Load tier slot sizes from config, with defaults
+		for (BackpackTier t : BackpackTier.values()) {
+			String path = "tiers." + t.name().toLowerCase() + ".slots";
+			int def = t.getStorageSlots();
+			int val = getConfig().getInt(path, def);
+			getConfig().set(path, val);
+		}
+		saveConfig();
+
 		// Ensure data folder exists and load storage
 		BackpackStorage.get().init(this);
 

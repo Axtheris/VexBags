@@ -20,9 +20,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public final class ItemUtil {
@@ -113,24 +111,26 @@ public final class ItemUtil {
 		int unique = 0;
 		int total = 0;
         if (data != null) {
-            unique = data.getItemCounts().size();
+            unique = data.getEntries().size();
             total = data.totalItems();
         }
-		// Storage line with progress
-		String bar = buildProgressBar(unique, tier.getStorageSlots(), 10, hex);
-        lore.add(noItalics(MM.deserialize("<dark_gray>•</dark_gray> <gray>storage:</gray> <white>" + unique + "/" + tier.getStorageSlots() + "</white>  " + bar)));
-		// Items total
-        lore.add(noItalics(MM.deserialize("<dark_gray>•</dark_gray> <gray>items:</gray> <white>" + total + "</white>")));
+        // Capacity and percentage
+        int maxCapacity = tier.getStorageSlots() * 64; // configurable later via config
+        int percentFull = maxCapacity == 0 ? 0 : Math.min(100, (int)Math.round((total * 100.0) / maxCapacity));
+        int percentMax = 100;
+        String bar = buildProgressBar(unique, tier.getStorageSlots(), 10, hex);
+        lore.add(noItalics(MM.deserialize("<dark_gray>•</dark_gray> <gray>" + ItemUtil.toSmallCaps("storage:") + "</gray> <white>" + unique + "/" + tier.getStorageSlots() + "</white>  " + bar)));
+        lore.add(noItalics(MM.deserialize("<dark_gray>•</dark_gray> <gray>" + ItemUtil.toSmallCaps("capacity:") + "</gray> <white>" + total + "/" + maxCapacity + "</white> <dark_gray>(</dark_gray><gray>" + percentFull + "</gray><white>/</white><gray>" + percentMax + "</gray><dark_gray>)</dark_gray>")));
 		// Spacer
         lore.add(noItalics(Component.text(" ")));
-		// Top items
-		if (data != null && !data.getItemCounts().isEmpty()) {
-            lore.add(noItalics(MM.deserialize("<gray>top items:</gray>")));
-			data.getItemCounts().entrySet().stream()
-					.sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-					.limit(5)
-                    .forEach(e -> lore.add(noItalics(MM.deserialize("<dark_gray>›</dark_gray> <white>" + e.getKey().name().toLowerCase() + "</white> <gray>×</gray> <white>" + e.getValue() + "</white>"))));
-		}
+        // Top items by count
+        if (data != null && !data.getEntries().isEmpty()) {
+            lore.add(noItalics(MM.deserialize("<gray>" + ItemUtil.toSmallCaps("top items:") + "</gray>")));
+            data.getEntries().values().stream()
+                    .sorted((a,b) -> Integer.compare(b.getAmount(), a.getAmount()))
+                    .limit(5)
+                    .forEach(st -> lore.add(noItalics(MM.deserialize("<dark_gray>›</dark_gray> <white>" + st.getTemplate().getType().name().toLowerCase() + "</white> <gray>×</gray> <white>" + st.getAmount() + "</white>"))));
+        }
 		// Footer divider
         lore.add(noItalics(MM.deserialize("<gradient:#" + hex + ":#" + light + "><bold>───────</bold></gradient>")));
 		meta.lore(lore);

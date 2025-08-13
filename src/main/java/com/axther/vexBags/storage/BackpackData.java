@@ -1,7 +1,7 @@
 package com.axther.vexBags.storage;
 
 import com.axther.vexBags.tier.BackpackTier;
-import org.bukkit.Material;
+// import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Collections;

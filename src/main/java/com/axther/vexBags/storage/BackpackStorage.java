@@ -59,9 +59,9 @@ public class BackpackStorage {
             sec.set("created_at", data.getCreatedAtEpochMs());
             sec.set("updated_at", data.getUpdatedAtEpochMs());
             ConfigurationSection items = sec.createSection("items");
-            Map<Material, Integer> counts = data.snapshotItemCounts();
-            for (Map.Entry<Material, Integer> e : counts.entrySet()) {
-                items.set(e.getKey().name(), e.getValue());
+            Map<String, Integer> counts = data.snapshotCounts();
+            for (Map.Entry<String, Integer> e : counts.entrySet()) {
+                items.set(e.getKey(), e.getValue());
             }
         }
         try {
@@ -112,16 +112,21 @@ public class BackpackStorage {
             data.setTier(tier);
             // Timestamps
             data.touch();
-			ConfigurationSection items = sec.getConfigurationSection("items");
-			if (items != null) {
-				for (String key : items.getKeys(false)) {
-					Material mat = Material.matchMaterial(key);
-					if (mat != null) {
-						int amount = items.getInt(key, 0);
-						if (amount > 0) data.add(mat, amount);
-					}
-				}
-			}
+            ConfigurationSection items = sec.getConfigurationSection("items");
+            if (items != null) {
+                for (String key : items.getKeys(false)) {
+                    int amount = items.getInt(key, 0);
+                    if (amount > 0) {
+                        // reconstruct a basic template from key is non-trivial; we'll store minimal proxy (material only)
+                        // For legacy entries, key could be a material name; attempt match
+                        Material mat = Material.matchMaterial(key);
+                        if (mat != null) {
+                            org.bukkit.inventory.ItemStack proxy = new org.bukkit.inventory.ItemStack(mat, 1);
+                            data.add(proxy, com.axther.vexBags.util.ItemUtil.stackKey(proxy), amount);
+                        }
+                    }
+                }
+            }
 			idToData.put(id, data);
 		}
 	}

@@ -36,8 +36,17 @@ public enum BackpackTier {
 		return upgradeMaterial;
 	}
 
+
 	public int getStorageSlots() {
-		return storageSlots;
+		// Allow override from config
+		try {
+			org.bukkit.configuration.file.FileConfiguration cfg = com.axther.vexBags.VexBags.getInstance().getConfig();
+			String path = "tiers." + name().toLowerCase() + ".slots";
+			int v = cfg.getInt(path, storageSlots);
+			return v > 0 ? v : storageSlots;
+		} catch (Exception ignore) {
+			return storageSlots;
+		}
 	}
 
 	public int getUpgradeSlots() {

@@ -9,6 +9,7 @@ softdepend:
   - Vault
   - PlaceholderAPI
   - WorldGuard
+  - WorldEdit
   - CombatLogX
   - ItemsAdder
   - Oraxen
@@ -47,4 +48,7 @@ permissions:
     default: op
   vexbags.admin.reload:
     description: Allows reloading VexBags configuration
+    default: op
+  vexbags.bypass:
+    description: Bypass all integration gates (WorldGuard, Towny, GriefPrevention, CombatLogX)
     default: op

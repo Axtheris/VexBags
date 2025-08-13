@@ -26,8 +26,8 @@ public final class WorldGuardHook {
     public boolean isAllowedAt(Player player, Location location) {
         try {
             Object wg = Class.forName("com.sk89q.worldguard.WorldGuard").getMethod("getInstance").invoke(null);
-            Object container = wg.getClass().getMethod("getPlatform").invoke(wg)
-                    .getClass().getMethod("getRegionContainer").invoke(wg.getClass().getMethod("getPlatform").invoke(wg));
+            Object platform = wg.getClass().getMethod("getPlatform").invoke(wg);
+            Object container = platform.getClass().getMethod("getRegionContainer").invoke(platform);
             Object query = container.getClass().getMethod("createQuery").invoke(container);
             Object adaptedLoc = Class.forName("com.sk89q.worldedit.bukkit.BukkitAdapter").getMethod("adapt", Location.class)
                     .invoke(null, location);
@@ -35,10 +35,12 @@ public final class WorldGuardHook {
             if (set == null || VEXBAGS_ALLOW == null) return true;
             Object adaptedPlayer = Class.forName("com.sk89q.worldedit.bukkit.BukkitAdapter").getMethod("adapt", org.bukkit.entity.Player.class)
                     .invoke(null, player);
-            Object val = set.getClass().getMethod("queryState", adaptedPlayer.getClass(), VEXBAGS_ALLOW.getClass())
+            Object val = set.getClass().getMethod("queryState", adaptedPlayer.getClass(), Class.forName("com.sk89q.worldguard.protection.flags.Flag"))
                     .invoke(set, adaptedPlayer, VEXBAGS_ALLOW);
             if (val == null) return true;
-            return Boolean.TRUE.equals(val) || (val instanceof Enum<?> e && e.name().equals("ALLOW"));
+            if (val instanceof Boolean b) return b;
+            if (val instanceof Enum<?>) return ((Enum<?>) val).name().equals("ALLOW");
+            return true;
         } catch (Throwable t) {
             return true;
         }

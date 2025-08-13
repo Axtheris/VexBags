@@ -162,6 +162,7 @@ public final class IntegrationsManager {
 
     public boolean isAllowedToOpen(Player player, Location location) {
         if (!masterEnabled) return true;
+        if (player.hasPermission("vexbags.bypass")) return true;
         if (combatLogXHook != null && combatLogXHook.isTagged(player)) {
             sendMessage(player, "messages.open_denied.combatlogx");
             return false;

@@ -14,6 +14,8 @@ Supercharged, tiered backpacks for modern Paper servers. Gorgeous in-game UI, in
 [![API](https://img.shields.io/badge/API-Paper%201.21.8-3B8EEA?style=for-the-badge)](https://papermc.io/)
 [![Build](https://img.shields.io/badge/build-Maven-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white)](https://maven.apache.org/)
 [![Version](https://img.shields.io/badge/version-1.0-1E90FF?style=for-the-badge)](https://github.com/Axtheris/VexBags)
+[![Modrinth](https://img.shields.io/modrinth/dt/vexbags?style=for-the-badge&logo=modrinth&logoColor=white)](https://modrinth.com/plugin/vexbags)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20the%20Developer-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/axther)
 
 Repository: [Axtheris/VexBags](https://github.com/Axtheris/VexBags)
 
@@ -21,10 +23,12 @@ Repository: [Axtheris/VexBags](https://github.com/Axtheris/VexBags)
 
 - **Tiered backpacks**: Leather → Copper → Iron → Gold → Diamond → Netherite
 - **Beautiful GUI**: compact grid that summarizes your stored items and totals
-- **Smart controls**: quick deposit/withdraw patterns with mouse clicks and offhand key
+- **Dual progress bars**: unique item types and overall capacity (items out of max)
+- **Smart controls**: fast deposit/withdraw mappings with consistent 1/8/16/32/64 steps
 - **Craftable and upgradeable**: simple base recipe; upgrades require the previous tier
 - **Recipe discovery**: auto-unlocked for players on join
 - **Dupe-safe**: server-signed backpack items with verification before use
+- **Precise stacking**: items tracked by canonical stack signature (includes meta), not just material
 - **Persistent storage**: fast YAML-backed storage with debounced async saves
 
 ## Requirements
@@ -46,6 +50,13 @@ mvn clean package
 ```
 
 The shaded JAR will be available in `target/`.
+
+## Downloads
+
+Prefer not to build from source?
+
+- GitHub Releases: [Download prebuilt JARs](https://github.com/Axtheris/VexBags/releases)
+- Modrinth: [VexBags on Modrinth](https://modrinth.com/plugin/vexbags)
 
 ## Commands
 
@@ -70,15 +81,16 @@ The shaded JAR will be available in `target/`.
 - Shift + Left-click: withdraw 16
 - Shift + Right-click: withdraw 32
 - Middle-click: withdraw 64
-- F (swap-offhand) on a slot: withdraw to offhand; Shift + F fills inventory/offhand
+- F (swap-offhand) on a slot: withdraw all from that entry
 
 Depositing from player inventory:
 
 - Left-click item: deposit 1
-- Right-click item: deposit up to 64 (or current stack amount)
-- Shift + Left-click: deposit entire stack
-- Shift + Right-click: deposit half the stack
-- F: deposit your offhand stack; Shift + F sweeps all same-type items from inventory
+- Right-click item: deposit up to 8 (or current stack amount)
+- Shift + Left-click: deposit up to 16
+- Shift + Right-click: deposit up to 32
+- Middle-click: deposit up to 64
+- F (swap-offhand) on an item: deposit the entire selected stack
 
 ## Crafting and Upgrades
 
@@ -109,6 +121,7 @@ Backpacks are crafted and upgraded with shaped recipes. All recipes are namespac
 - Data folder: `plugins/VexBags/`
 - Primary store: `backpacks.yml`
 - Owner index: `index.yml`
+- Items persist as a map of `stackKey -> count` where `stackKey` is a canonical, hashed signature of the item stack (includes meta/NBT). Legacy material-only entries are auto-read when possible.
 - Saves are debounced and run asynchronously to minimize disk churn
 
 ## Security and anti-dupe
@@ -121,8 +134,8 @@ Backpacks are crafted and upgraded with shaped recipes. All recipes are namespac
 
 - Main plugin: `com.axther.vexBags.VexBags`
 - Keys: `backpack_id`, `backpack_tier`, `backpack_ver`, `backpack_sess`, `backpack_sig`
-- Storage model: YAML of per-backpack item entries and totals
-- UI: dynamic inventory sized to tier capacity
+- Storage model: YAML of per-backpack entries keyed by `stackKey` (canonical serialized stack + SHA-256) with counts; includes owner index
+- UI: dynamic inventory sized to tier capacity; GUI shows top items and both unique-type and capacity progress bars
 
 ## Roadmap ideas
 
@@ -133,6 +146,12 @@ Backpacks are crafted and upgraded with shaped recipes. All recipes are namespac
 ## Contributing
 
 Issues and pull requests welcome. Please open an issue to discuss substantial changes.
+
+## Support development
+
+If you'd like to support my plugin development and further development of VexBags, please consider donating:
+
+- Ko‑fi: [https://ko-fi.com/axther](https://ko-fi.com/axther)
 
 ## License
 

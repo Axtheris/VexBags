@@ -42,19 +42,21 @@ public class BackpackGui {
 		BackpackData data = BackpackStorage.get().get(backpackId);
 		if (data == null) return;
 
-		int slot = 0;
-		for (Map.Entry<Material, Integer> e : data.getItemCounts().entrySet()) {
-			if (slot >= tier.getStorageSlots()) break;
-			ItemStack display = new ItemStack(e.getKey());
-			ItemMeta meta = display.getItemMeta();
+        int slot = 0;
+        var sorted = new java.util.ArrayList<>(data.getEntries().values());
+        sorted.sort((a,b) -> Integer.compare(b.getAmount(), a.getAmount()));
+        for (var st : sorted) {
+            if (slot >= tier.getStorageSlots()) break;
+            ItemStack display = st.getTemplate().clone();
+            ItemMeta meta = display.getItemMeta();
             List<Component> lore = new ArrayList<>();
-            lore.add(com.axther.vexBags.util.ItemUtil.mm().deserialize("<white>total: " + e.getValue() + "</white>").decoration(TextDecoration.ITALIC, false));
+            lore.add(com.axther.vexBags.util.ItemUtil.mm().deserialize("<white>total: " + st.getAmount() + "</white>").decoration(TextDecoration.ITALIC, false));
             lore.add(com.axther.vexBags.util.ItemUtil.CLICK_HINT);
-			meta.lore(lore);
-			display.setItemMeta(meta);
-			display.setAmount(Math.min(e.getValue(), display.getMaxStackSize()));
-			inventory.setItem(slot++, display);
-		}
+            meta.lore(lore);
+            display.setItemMeta(meta);
+            display.setAmount(Math.min(st.getAmount(), display.getMaxStackSize()));
+            inventory.setItem(slot++, display);
+        }
 	}
 
 	public UUID getBackpackId() { return backpackId; }
